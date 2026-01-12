@@ -389,3 +389,134 @@ model Engagement {
 
   @@map("engagements")
 }
+
+model SectorAbout {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  sector    String
+  image     String
+  active    Boolean  @default(true)
+  date      DateTime @default(now())
+
+  @@map("sectors_about")
+}
+
+model InfrashaktiAwardType {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String 
+  image       String
+  icon        String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("infrashakti_award_types")
+}
+
+model InfrashaktiAwardee {
+  id              String               @id @default(auto()) @map("_id") @db.ObjectId
+  awardType       String
+  awardee         String
+  title           String
+  description     String
+  videoUrlYoutube String
+  thumbnailUrl    String
+  iconUrl         String
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  
+  @@map("infrashakti_awardees")
+}
+
+model InfrashaktiCeremonyScene {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  name            String
+  description     String
+  thumbnailUrl    String
+  youtubeVideoUrl String
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("infrashakti_ceremony_scenes")
+}
+
+model Member {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  designation String
+  socialUrl   String?
+  socialType  String?  // linkedin or twitter
+  image       String
+  type        String   // the 5 types mentioned
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("members")
+}
+
+model Gallery {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl    String
+  description String
+  year        String
+  event       String
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@map("galleries")
+}
+
+model InfraKatha {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  infraKathaLabel String
+  title           String
+  description     String
+  date            DateTime
+  youtubeVideoUrl String
+  thumbnailUrl    String
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("infra_katha")
+}
+
+model InfraPanditAward {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  active          Boolean  @default(true)
+  title           String
+  content         String   // Markdown content
+  posterImageUrl  String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("infrapandit_awards")
+}
+
+model InfraPanditEligibility {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  ctaText   String   @default("Eligibility and process")
+  active    Boolean  @default(true)
+  content   String   // Markdown content for popup
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("infrapandit_eligibility")
+}
+
+model InfraPanditApplication {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  ctaText   String   @default("Apply Now")
+  url       String   @default("") // Google Form URL
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("infrapandit_application")
+}

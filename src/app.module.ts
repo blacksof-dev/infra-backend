@@ -25,6 +25,12 @@ import { CategoriesModule } from './achives/categories/categories.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { EngagementsModule } from './outreach-and-engagements/engagements.module';
 import { FileUploadModule } from './common/file-upload/file-upload.module';
+import { AboutSectorModule } from './about-us/sectors/about-sector.module';
+import { InfrashaktiModule } from './infrashakti/infrashakti.module';
+import { MemberModule } from './members/member.module';
+import { GalleryModule as AdvancedGalleryModule } from './gallery/gallery.module';
+import { InfraKathaModule } from './infrakatha/infrakatha.module';
+import { InfraPanditModule } from './infrapandit/infrapandit.module';
 
 @Module({
   imports: [
@@ -64,9 +70,15 @@ import { FileUploadModule } from './common/file-upload/file-upload.module';
     VideosModule,
     CategoriesModule,
     KnowledgeModule,
+    AboutSectorModule,
+    InfrashaktiModule,
+    MemberModule,
+    AdvancedGalleryModule,
     FileUploadModule,
+    InfraKathaModule,
+    InfraPanditModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeederService],
 })
-export class AppModule { }
+export class AppModule {}
