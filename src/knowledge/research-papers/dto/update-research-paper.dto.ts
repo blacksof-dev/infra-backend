@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UpdateResearchPaperDto {
   @ApiProperty({
@@ -13,7 +19,8 @@ export class UpdateResearchPaperDto {
 
   @ApiProperty({
     description: 'The title of the research paper',
-    example: 'Study on the implementation of compensatory afforestation in India',
+    example:
+      'Study on the implementation of compensatory afforestation in India',
     required: false,
   })
   @IsString()
@@ -21,17 +28,9 @@ export class UpdateResearchPaperDto {
   title?: string;
 
   @ApiProperty({
-    description: 'The description of the research paper',
-    example: 'This paper examines the implementation of compensatory afforestation policies in India',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @ApiProperty({
     description: 'The link to the research paper PDF',
-    example: '/assets/pdf/Study-on-Implementation-of-Compensatory-Afforestation-in-India.pdf',
+    example:
+      '/assets/pdf/Study-on-Implementation-of-Compensatory-Afforestation-in-India.pdf',
     required: false,
   })
   @IsString()

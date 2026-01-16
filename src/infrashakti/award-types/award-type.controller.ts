@@ -25,7 +25,10 @@ import { UserRole } from '@prisma/client';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
-import { CreateInfrashaktiAwardDto } from './dto/create-award.dto';
+import {
+  CreateInfrashaktiAwardDto,
+  UpdateInfrashaktiAwardDto,
+} from './dto/create-award.dto';
 
 @ApiTags('Infrashakti')
 @Controller('infrashakti/types-of-awards')
@@ -86,22 +89,14 @@ export class InfrashaktiAwardController {
     ]),
   )
   create(
-    @Body() body: any,
+    @Body() body: CreateInfrashaktiAwardDto,
     @UploadedFiles()
     files: {
       imageFile: Multer.File[];
       iconFile: Multer.File[];
     },
   ) {
-    // Parse form data properly
-    const createAwardDto: CreateInfrashaktiAwardDto = {
-      title: body.title || undefined,
-      description: body.description,
-      // Parse active as boolean
-      active: body.active === 'true' || body.active === true,
-    };
-
-    return this.service.create(createAwardDto, files);
+    return this.service.create(body, files);
   }
 
   @Get()
@@ -135,6 +130,35 @@ export class InfrashaktiAwardController {
     description: 'Updates an existing award type. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        imageFile: {
+          type: 'string',
+          format: 'binary',
+          description: 'Cover image for the award type',
+        },
+        iconFile: {
+          type: 'string',
+          format: 'binary',
+          description: 'Icon image for the award type',
+        },
+        title: {
+          type: 'string',
+          description: 'The title of the award type',
+        },
+        description: {
+          type: 'string',
+          description: 'The description of the award type',
+        },
+        active: {
+          type: 'boolean',
+          description: 'Whether the award type is active',
+        },
+      },
+    },
+  })
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'imageFile', maxCount: 1 },
@@ -143,7 +167,7 @@ export class InfrashaktiAwardController {
   )
   update(
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateInfrashaktiAwardDto,
     @UploadedFiles()
     files: {
       imageFile?: Multer.File[];
@@ -155,7 +179,7 @@ export class InfrashaktiAwardController {
     if (body.title) updateData.title = body.title;
     if (body.description) updateData.description = body.description;
     if (body.active !== undefined) {
-      updateData.active = body.active === 'true' || body.active === true;
+      updateData.active = body.active;
     }
 
     return this.service.update(id, updateData, files);

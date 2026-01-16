@@ -22,6 +22,7 @@ export class InfrashaktiAwardeeService {
     files: {
       thumbnailFile: Multer.File[];
       iconFile: Multer.File[];
+      partnersLogo?: Multer.File[];
     },
   ) {
     try {
@@ -45,6 +46,14 @@ export class InfrashaktiAwardeeService {
         `awardee-icon-${sanitizedName}-${timestamp}-${hash}`,
       );
 
+      let partnersLogoUrl: string | undefined;
+      if (files.partnersLogo && files.partnersLogo.length > 0) {
+        partnersLogoUrl = await this.fileUploadService.uploadImage(
+          files.partnersLogo[0],
+          `awardee-partners-${sanitizedName}-${timestamp}-${hash}`,
+        );
+      }
+
       const data: any = {
         awardType: dto.awardType,
         awardee: dto.awardee,
@@ -53,6 +62,7 @@ export class InfrashaktiAwardeeService {
         videoUrlYoutube: dto.videoUrlYoutube,
         thumbnailUrl,
         iconUrl,
+        partnersLogo: partnersLogoUrl,
         active: dto.active !== undefined ? dto.active : true,
       };
 
@@ -141,6 +151,16 @@ export class InfrashaktiAwardeeService {
           await this.fileUploadService.deleteFile(existing.iconUrl);
         }
       }
+
+      if (files.partnersLogo && files.partnersLogo.length > 0) {
+        data.partnersLogo = await this.fileUploadService.uploadImage(
+          files.partnersLogo[0],
+          `awardee-partners-${id}-${timestamp}-${hash}`,
+        );
+        if (existing.partnersLogo) {
+          await this.fileUploadService.deleteFile(existing.partnersLogo);
+        }
+      }
     }
 
     return (this.prisma as ExtendedPrismaService).infrashaktiAwardee.update({
@@ -165,6 +185,9 @@ export class InfrashaktiAwardeeService {
     }
     if (existing.iconUrl) {
       await this.fileUploadService.deleteFile(existing.iconUrl);
+    }
+    if (existing.partnersLogo) {
+      await this.fileUploadService.deleteFile(existing.partnersLogo);
     }
 
     return (this.prisma as ExtendedPrismaService).infrashaktiAwardee.delete({

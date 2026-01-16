@@ -44,7 +44,7 @@ export class GalleryController {
   @ApiOperation({
     summary: 'Add a new image to gallery',
     description:
-      'Upload an image and specify the year and event it belongs to.',
+      'Upload an image and specify the event and date it belongs to.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -52,15 +52,20 @@ export class GalleryController {
       type: 'object',
       properties: {
         description: { type: 'string' },
-        year: { type: 'string', description: 'Year (e.g., 2025)' },
         event: {
           type: 'string',
           description: 'Event (e.g., Infrashakti Awards)',
         },
+        date: {
+          type: 'string',
+          format: 'date',
+          description: 'Date (e.g., 2025-01-15)',
+        },
         file: { type: 'string', format: 'binary', description: 'Image file' },
-        active: { type: 'boolean', default: true },
+        activeOnMain: { type: 'boolean', default: true },
+        archived: { type: 'boolean', default: true },
       },
-      required: ['description', 'year', 'event', 'file'],
+      required: ['description', 'event', 'date', 'file'],
     },
   })
   @ApiResponse({ status: 201, description: 'Image added successfully.' })
@@ -71,10 +76,18 @@ export class GalleryController {
   create(@Body() body: any, @UploadedFile() file: Multer.File) {
     const dto: CreateGalleryDto = {
       description: body.description,
-      year: body.year,
       event: body.event,
-      active:
-        body.active === 'true' || body.active === true || body.active === '1',
+      date: new Date(body.date),
+      activeOnMain:
+        body.activeOnMain === 'true' ||
+        body.activeOnMain === true ||
+        body.activeOnMain === '1' ||
+        body.activeOnMain === undefined, // default true
+      archived:
+        body.archived === 'true' ||
+        body.archived === true ||
+        body.archived === '1' ||
+        body.archived === undefined, // default true
     };
     return this.service.create(dto, file);
   }
@@ -83,7 +96,7 @@ export class GalleryController {
   @ApiOperation({
     summary: 'Get all gallery images',
     description:
-      'Returns all images. Supports optional pagination and filtering by year/event. If page/limit are omitted, returns all data.',
+      'Returns all images. Supports optional pagination and filtering by year/event/archived/activeOnMain. If page/limit are omitted, returns all data.',
   })
   @ApiResponse({
     status: 200,
@@ -95,7 +108,8 @@ export class GalleryController {
       query.limit,
       query.year,
       query.event,
-      query.active,
+      query.archived,
+      query.activeOnMain,
     );
   }
 
@@ -108,6 +122,27 @@ export class GalleryController {
   @ApiResponse({ status: 200, description: 'Filters retrieved successfully.' })
   getFilters() {
     return this.service.getFilters();
+  }
+
+  @Get('events')
+  @ApiOperation({
+    summary: 'Get all unique event names',
+    description:
+      'Returns a list of all unique event names present in the gallery.',
+  })
+  @ApiResponse({ status: 200, description: 'Events retrieved successfully.' })
+  getEvents() {
+    return this.service.getEvents();
+  }
+
+  @Get('years')
+  @ApiOperation({
+    summary: 'Get all unique years',
+    description: 'Returns a list of all unique years present in the gallery.',
+  })
+  @ApiResponse({ status: 200, description: 'Years retrieved successfully.' })
+  getYears() {
+    return this.service.getYears();
   }
 
   @Get(':id')
@@ -129,10 +164,11 @@ export class GalleryController {
       type: 'object',
       properties: {
         description: { type: 'string' },
-        year: { type: 'string' },
         event: { type: 'string' },
+        date: { type: 'string', format: 'date' },
         file: { type: 'string', format: 'binary' },
-        active: { type: 'boolean' },
+        activeOnMain: { type: 'boolean' },
+        archived: { type: 'boolean' },
       },
     },
   })
@@ -146,24 +182,42 @@ export class GalleryController {
   ) {
     const dto: UpdateGalleryDto = {};
     if (body.description) dto.description = body.description;
-    if (body.year) dto.year = body.year;
     if (body.event) dto.event = body.event;
-    if (body.active !== undefined) {
-      dto.active =
-        body.active === 'true' || body.active === true || body.active === '1';
+    if (body.date) dto.date = new Date(body.date);
+    if (body.activeOnMain !== undefined) {
+      dto.activeOnMain =
+        body.activeOnMain === 'true' ||
+        body.activeOnMain === true ||
+        body.activeOnMain === '1';
+    }
+    if (body.archived !== undefined) {
+      dto.archived =
+        body.archived === 'true' ||
+        body.archived === true ||
+        body.archived === '1';
     }
 
     return this.service.update(id, dto, file);
   }
 
-  @Patch(':id/toggle-status')
+  @Patch(':id/toggle-archive')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Toggle active status' })
+  @ApiOperation({ summary: 'Toggle archived status' })
   @ApiResponse({ status: 200, description: 'Status toggled.' })
-  toggleStatus(@Param('id') id: string) {
-    return this.service.toggleStatus(id);
+  toggleArchive(@Param('id') id: string) {
+    return this.service.toggleArchive(id);
+  }
+
+  @Patch(':id/toggle-main')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Toggle active on main status' })
+  @ApiResponse({ status: 200, description: 'Status toggled.' })
+  toggleOnMain(@Param('id') id: string) {
+    return this.service.toggleActiveOnMain(id);
   }
 
   @Delete(':id')

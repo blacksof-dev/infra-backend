@@ -1,23 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateResearchPaperDto {
   @ApiProperty({
     description: 'The title of the research paper',
-    example: 'Study on the implementation of compensatory afforestation in India',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  title?: string;
-
-  @ApiProperty({
-    description: 'The description of the research paper',
-    example: 'This paper examines the implementation of compensatory afforestation policies in India',
+    example:
+      'Study on the implementation of compensatory afforestation in India',
+    required: true,
   })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  title: string;
 
   @ApiProperty({
     description: 'The publication date of the research paper',

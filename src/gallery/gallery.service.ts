@@ -35,7 +35,8 @@ export class GalleryService {
       const data: any = {
         ...dto,
         imageUrl,
-        active: dto.active !== undefined ? dto.active : true,
+        activeOnMain: dto.activeOnMain !== undefined ? dto.activeOnMain : true,
+        archived: dto.archived !== undefined ? dto.archived : true,
       };
 
       const result = await (
@@ -57,22 +58,37 @@ export class GalleryService {
     limit?: number,
     year?: string,
     event?: string,
-    active?: boolean,
+    archived?: boolean,
+    activeOnMain?: boolean,
   ) {
     const where: any = {};
-    if (year) where.year = year;
+    if (year) {
+      const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
+      const endOfYear = new Date(`${year}-12-31T23:59:59.999Z`);
+      where.date = {
+        gte: startOfYear,
+        lte: endOfYear,
+      };
+    }
     if (event) where.event = event;
-    if (active !== undefined) where.active = active;
+    if (archived !== undefined) where.archived = archived;
+    if (activeOnMain !== undefined) where.activeOnMain = activeOnMain;
 
-    // Default sorting by newest
-    const orderBy = { createdAt: 'desc' };
+    // Default sorting by newest date
+    const orderBy = { date: 'desc' };
 
-    // If no pagination parameters provided, return all data
-    if (page === undefined && limit === undefined) {
+    // If no pagination or filter parameters provided, return all data
+    if (
+      page === undefined &&
+      limit === undefined &&
+      year === undefined &&
+      event === undefined &&
+      archived === undefined &&
+      activeOnMain === undefined
+    ) {
       const data = await (
         this.prisma as ExtendedPrismaService
       ).gallery.findMany({
-        where,
         orderBy,
       });
       return { data };
@@ -108,22 +124,42 @@ export class GalleryService {
 
   async getFilters() {
     const [years, events] = await Promise.all([
-      (this.prisma as ExtendedPrismaService).gallery.findMany({
-        select: { year: true },
-        distinct: ['year'],
-        where: { active: true },
-      }),
-      (this.prisma as ExtendedPrismaService).gallery.findMany({
-        select: { event: true },
-        distinct: ['event'],
-        where: { active: true },
-      }),
+      this.getYears(),
+      this.getEvents(),
     ]);
 
     return {
-      years: years.map((y) => y.year).sort((a, b) => b.localeCompare(a)),
-      events: events.map((e) => e.event).sort(),
+      years,
+      events,
     };
+  }
+
+  async getEvents() {
+    const events = await (
+      this.prisma as ExtendedPrismaService
+    ).gallery.findMany({
+      select: { event: true },
+      distinct: ['event'],
+    });
+    return events.map((e) => e.event).sort();
+  }
+
+  async getYears() {
+    // For MongoDB/Prisma, we fetch dates and extract years manually
+    // Alternatively, use raw aggregation if performance is an issue
+    const items = await (this.prisma as ExtendedPrismaService).gallery.findMany(
+      {
+        select: { date: true },
+      },
+    );
+
+    const years = Array.from(
+      new Set(
+        items.map((item) => new Date(item.date).getUTCFullYear().toString()),
+      ),
+    );
+
+    return years.sort((a: string, b: string) => b.localeCompare(a));
   }
 
   async findOne(id: string) {
@@ -163,11 +199,19 @@ export class GalleryService {
     });
   }
 
-  async toggleStatus(id: string) {
+  async toggleArchive(id: string) {
     const existing = await this.findOne(id);
     return (this.prisma as ExtendedPrismaService).gallery.update({
       where: { id },
-      data: { active: !existing.active },
+      data: { archived: !existing.archived },
+    });
+  }
+
+  async toggleActiveOnMain(id: string) {
+    const existing = await this.findOne(id);
+    return (this.prisma as ExtendedPrismaService).gallery.update({
+      where: { id },
+      data: { activeOnMain: !existing.activeOnMain },
     });
   }
 

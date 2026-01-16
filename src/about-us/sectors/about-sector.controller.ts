@@ -30,6 +30,7 @@ import { Roles, UserRole } from 'src/auth/decorators/roles.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
 import { CreateSectorDto } from './dto/create-sector.dto';
+import { UpdateSectorDto } from './dto/update-sector.dto';
 
 @ApiTags('About Us')
 @Controller('about-us/sectors')
@@ -77,17 +78,13 @@ export class AboutSectorController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'imageFile', maxCount: 1 }]))
   create(
-    @Body() body: any,
+    @Body() body: CreateSectorDto,
     @UploadedFiles()
     files: {
       imageFile?: Multer.File[];
     },
   ) {
-    const createSectorDto: CreateSectorDto = {
-      sector: body.sector,
-      active: body.active === 'true' || body.active === true,
-    };
-    return this.service.create(createSectorDto, files);
+    return this.service.create(body, files);
   }
 
   @Get()
@@ -198,7 +195,7 @@ export class AboutSectorController {
   @UseInterceptors(FileFieldsInterceptor([{ name: 'imageFile', maxCount: 1 }]))
   update(
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateSectorDto,
     @UploadedFiles() files: { imageFile?: Multer.File[] },
   ) {
     return this.service.update(id, body, files);

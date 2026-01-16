@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateInfrashaktiAwardDto {
@@ -17,6 +18,11 @@ export class CreateInfrashaktiAwardDto {
     default: true,
     required: false,
   })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  })
   @IsBoolean()
   @IsOptional()
   active?: boolean = true;
@@ -30,3 +36,7 @@ export class CreateInfrashaktiAwardDto {
   @IsNotEmpty()
   description: string;
 }
+
+export class UpdateInfrashaktiAwardDto extends PartialType(
+  CreateInfrashaktiAwardDto,
+) {}

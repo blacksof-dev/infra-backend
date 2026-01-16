@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateSectorDto {
@@ -15,6 +16,11 @@ export class UpdateSectorDto {
     example: true,
     default: true,
     required: false,
+  })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
   })
   @IsBoolean()
   @IsOptional()

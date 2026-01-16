@@ -76,6 +76,11 @@ export class InfrashaktiAwardeeController {
           description: 'Whether active',
           default: true,
         },
+        partnersLogo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Partners logo image',
+        },
       },
       required: [
         'awardType',
@@ -92,26 +97,19 @@ export class InfrashaktiAwardeeController {
     FileFieldsInterceptor([
       { name: 'thumbnailFile', maxCount: 1 },
       { name: 'iconFile', maxCount: 1 },
+      { name: 'partnersLogo', maxCount: 1 },
     ]),
   )
   create(
-    @Body() body: any,
+    @Body() body: CreateInfrashaktiAwardeeDto,
     @UploadedFiles()
     files: {
       thumbnailFile: Multer.File[];
       iconFile: Multer.File[];
+      partnersLogo?: Multer.File[];
     },
   ) {
-    const dto: CreateInfrashaktiAwardeeDto = {
-      awardType: body.awardType,
-      awardee: body.awardee,
-      title: body.title,
-      description: body.description,
-      videoUrlYoutube: body.videoUrlYoutube,
-      active:
-        body.active === 'true' || body.active === true || body.active === '1',
-    };
-    return this.service.create(dto, files);
+    return this.service.create(body, files);
   }
 
   @Get()
@@ -167,6 +165,11 @@ export class InfrashaktiAwardeeController {
           type: 'boolean',
           description: 'Whether active',
         },
+        partnersLogo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Partners logo image',
+        },
       },
     },
   })
@@ -174,6 +177,7 @@ export class InfrashaktiAwardeeController {
     FileFieldsInterceptor([
       { name: 'thumbnailFile', maxCount: 1 },
       { name: 'iconFile', maxCount: 1 },
+      { name: 'partnersLogo', maxCount: 1 },
     ]),
   )
   update(
@@ -183,6 +187,7 @@ export class InfrashaktiAwardeeController {
     files: {
       thumbnailFile?: Multer.File[];
       iconFile?: Multer.File[];
+      partnersLogo?: Multer.File[];
     },
   ) {
     const updateData: any = {};
@@ -192,10 +197,7 @@ export class InfrashaktiAwardeeController {
     if (body.description) updateData.description = body.description;
     if (body.videoUrlYoutube) updateData.videoUrlYoutube = body.videoUrlYoutube;
     if (body.active !== undefined) {
-      updateData.active =
-        String(body.active) === 'true' ||
-        body.active === true ||
-        String(body.active) === '1';
+      updateData.active = body.active;
     }
 
     return this.service.update(id, updateData, files);

@@ -141,12 +141,12 @@ export class MemberService {
     const hasUrl = dto.socialUrl && dto.socialUrl.toString().trim() !== '';
     const hasType = dto.socialType && dto.socialType.toString().trim() !== '';
 
-    if (hasUrl && !hasType) {
+    if (hasUrl && !hasType && dto.socialType !== 'null') {
       throw new BadRequestException(
         'socialType is required when socialUrl is provided',
       );
     }
-    if (!hasUrl && hasType) {
+    if (!hasUrl && hasType && dto.socialUrl !== '') {
       throw new BadRequestException(
         'socialUrl is required when socialType is provided',
       );

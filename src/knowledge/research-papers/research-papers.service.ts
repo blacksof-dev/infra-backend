@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateResearchPaperDto } from './dto/create-research-paper.dto';
 import { UpdateResearchPaperDto } from './dto/update-research-paper.dto';
@@ -20,7 +25,7 @@ export class ResearchPapersService {
     private readonly prisma: PrismaService,
     private readonly sectorsService: SectorsService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Create a new research paper
@@ -31,8 +36,8 @@ export class ResearchPapersService {
   async create(
     createResearchPaperDto: CreateResearchPaperDto,
     files: {
-      imageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
+      imageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
     },
   ) {
     try {
@@ -66,52 +71,54 @@ export class ResearchPapersService {
       const pdfHash = Math.random().toString(36).substring(2, 10);
       const sanitizedTitle = createResearchPaperDto.title
         ? createResearchPaperDto.title
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '')
-          .substring(0, 30) // Shorter title to accommodate hash
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '')
+            .substring(0, 30) // Shorter title to accommodate hash
         : `research-${timestamp}`; // Default if no title provided
 
       // Upload files with unique filenames
       const imageUrl = await this.fileUploadService.uploadImage(
         imageFile,
-        `research-paper-img-${sanitizedTitle}-${timestamp}-${imageHash}`
+        `research-paper-img-${sanitizedTitle}-${timestamp}-${imageHash}`,
       );
 
       const pdfUrl = await this.fileUploadService.uploadPdf(
         pdfFile,
-        `research-paper-pdf-${sanitizedTitle}-${timestamp}-${pdfHash}`
+        `research-paper-pdf-${sanitizedTitle}-${timestamp}-${pdfHash}`,
       );
 
       // Parse date string to Date object if provided, otherwise use current date
-      const date = createResearchPaperDto.date ? new Date(createResearchPaperDto.date) : new Date();
+      const date = createResearchPaperDto.date
+        ? new Date(createResearchPaperDto.date)
+        : new Date();
 
       // Create research paper with file URLs
       // Prepare data for creating research paper
       const paperData: any = {
         image: imageUrl,
-        description: createResearchPaperDto.description,
+        title: createResearchPaperDto.title,
         link: pdfUrl,
         date,
-        active: createResearchPaperDto.active !== undefined ? createResearchPaperDto.active : true,
+        active:
+          createResearchPaperDto.active !== undefined
+            ? createResearchPaperDto.active
+            : true,
         sectorIds: sectorIds,
       };
 
-      // Add title if provided
-      if (createResearchPaperDto.title) {
-        paperData.title = createResearchPaperDto.title;
-      } else {
-        paperData.title = ''; // Empty string as default
-      }
-
-      const researchPaper = await (this.prisma as ExtendedPrismaService).researchPaper.create({
+      const researchPaper = await (
+        this.prisma as ExtendedPrismaService
+      ).researchPaper.create({
         data: paperData,
         include: {
           sectors: true, // Include related sectors
         },
       });
 
-      this.logger.log(`Created new research paper: ${createResearchPaperDto.title}`);
+      this.logger.log(
+        `Created new research paper: ${createResearchPaperDto.title}`,
+      );
       return researchPaper;
     } catch (error) {
       this.logger.error(`Failed to create research paper: ${error.message}`);
@@ -137,8 +144,10 @@ export class ResearchPapersService {
 
     // Filter by sector if provided
     if (sectorId) {
-      where.sectorIds = {
-        has: sectorId,
+      where.sectors = {
+        some: {
+          id: sectorId,
+        },
       };
     }
 
@@ -146,12 +155,16 @@ export class ResearchPapersService {
     const skip = (page - 1) * limit;
 
     // Get total count for pagination
-    const totalCount = await (this.prisma as ExtendedPrismaService).researchPaper.count({
+    const totalCount = await (
+      this.prisma as ExtendedPrismaService
+    ).researchPaper.count({
       where,
     });
 
     // Get paginated research papers
-    const researchPapers = await (this.prisma as ExtendedPrismaService).researchPaper.findMany({
+    const researchPapers = await (
+      this.prisma as ExtendedPrismaService
+    ).researchPaper.findMany({
       where,
       orderBy: { date: 'desc' },
       include: {
@@ -169,7 +182,7 @@ export class ResearchPapersService {
         limit,
         totalPages: Math.ceil(totalCount / limit),
       },
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
 
@@ -183,7 +196,9 @@ export class ResearchPapersService {
       throw new BadRequestException('Research paper ID must be provided');
     }
 
-    const researchPaper = await (this.prisma as ExtendedPrismaService).researchPaper.findUnique({
+    const researchPaper = await (
+      this.prisma as ExtendedPrismaService
+    ).researchPaper.findUnique({
       where: { id },
       include: {
         sectors: true, // Include related sectors
@@ -208,9 +223,9 @@ export class ResearchPapersService {
     id: string,
     updateResearchPaperDto: UpdateResearchPaperDto,
     files?: {
-      imageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
-    }
+      imageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
+    },
   ) {
     try {
       // Verify research paper exists
@@ -219,7 +234,9 @@ export class ResearchPapersService {
       // Validate sectors if provided
       if (updateResearchPaperDto.sectorIds) {
         // Filter out any empty strings from sectorIds
-        const validSectorIds = updateResearchPaperDto.sectorIds.filter(id => id && id.trim() !== '');
+        const validSectorIds = updateResearchPaperDto.sectorIds.filter(
+          (id) => id && id.trim() !== '',
+        );
 
         // Only validate if there are valid sector IDs
         if (validSectorIds.length > 0) {
@@ -236,14 +253,18 @@ export class ResearchPapersService {
       const data: any = {};
 
       // Only add fields that are explicitly provided in the DTO
-      if (updateResearchPaperDto.title !== undefined) data.title = updateResearchPaperDto.title;
-      if (updateResearchPaperDto.description !== undefined) data.description = updateResearchPaperDto.description;
-      if (updateResearchPaperDto.active !== undefined) data.active = updateResearchPaperDto.active;
-      if (updateResearchPaperDto.sectorIds !== undefined) data.sectorIds = updateResearchPaperDto.sectorIds;
+      if (updateResearchPaperDto.title !== undefined)
+        data.title = updateResearchPaperDto.title;
+      if (updateResearchPaperDto.active !== undefined)
+        data.active = updateResearchPaperDto.active;
+      if (updateResearchPaperDto.sectorIds !== undefined)
+        data.sectorIds = updateResearchPaperDto.sectorIds;
 
       // Parse date string to Date object if provided
       if (updateResearchPaperDto.date !== undefined) {
-        data.date = updateResearchPaperDto.date ? new Date(updateResearchPaperDto.date) : null;
+        data.date = updateResearchPaperDto.date
+          ? new Date(updateResearchPaperDto.date)
+          : null;
       }
 
       // Handle file uploads if provided
@@ -258,13 +279,17 @@ export class ResearchPapersService {
 
           // Use existing title or ID for filename
           const baseName = existingPaper.title
-            ? existingPaper.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 30)
+            ? existingPaper.title
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
+                .substring(0, 30)
             : `research-${id}`;
 
           // Upload image file
           const imageUrl = await this.fileUploadService.uploadImage(
             imageFile,
-            `research-paper-img-${baseName}-${timestamp}-${imageHash}`
+            `research-paper-img-${baseName}-${timestamp}-${imageHash}`,
           );
 
           // Add image URL to update data
@@ -281,13 +306,17 @@ export class ResearchPapersService {
 
           // Use existing title or ID for filename
           const baseName = existingPaper.title
-            ? existingPaper.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 30)
+            ? existingPaper.title
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
+                .substring(0, 30)
             : `research-${id}`;
 
           // Upload PDF file
           const pdfUrl = await this.fileUploadService.uploadPdf(
             pdfFile,
-            `research-paper-pdf-${baseName}-${timestamp}-${pdfHash}`
+            `research-paper-pdf-${baseName}-${timestamp}-${pdfHash}`,
           );
 
           // Add PDF URL to update data
@@ -356,7 +385,12 @@ export class ResearchPapersService {
    * @param limit - Number of items per page
    * @returns Array of research papers in the specified sector with pagination
    */
-  async getResearchPapersBySector(sectorId: string, activeOnly = false, page = 1, limit = 10) {
+  async getResearchPapersBySector(
+    sectorId: string,
+    activeOnly = false,
+    page = 1,
+    limit = 10,
+  ) {
     // Verify sector exists
     await this.sectorsService.findOne(sectorId);
 
@@ -372,23 +406,23 @@ export class ResearchPapersService {
     const researchPapers: any[] = [
       {
         id: 13,
-        img: "/assets/knowledeg/researchPapers/13.png",
-        category: "Infrastructure",
-        title: "",
-        sectors: "Infrastructure",
-        date: " ",
-        description: "Removing Barriers to Faster Penetration of Trees Outside Forests Productsin Construction Sector",
-        link: "/assets/pdf/removing-barriers-to-faster-penetration-of-trees-final-report.pdf",
+        img: '/assets/knowledeg/researchPapers/13.png',
+        category: 'Infrastructure',
+        title:
+          'Removing Barriers to Faster Penetration of Trees Outside Forests Productsin Construction Sector',
+        sectors: 'Infrastructure',
+        date: ' ',
+        link: '/assets/pdf/removing-barriers-to-faster-penetration-of-trees-final-report.pdf',
       },
       {
         id: 10,
-        img: "/assets/knowledeg/researchPapers/12.jpg",
-        category: "Urban Planning",
-        title: "",
-        sectors: "Urban Planning",
-        date: " ",
-        description: "Relieving urban congestion and promoting tourism through ropeways",
-        link: "/assets/pdf/urbanCongestion.pdf",
+        img: '/assets/knowledeg/researchPapers/12.jpg',
+        category: 'Urban Planning',
+        title:
+          'Relieving urban congestion and promoting tourism through ropeways',
+        sectors: 'Urban Planning',
+        date: ' ',
+        link: '/assets/pdf/urbanCongestion.pdf',
       },
       // ... other static data
     ];
@@ -396,7 +430,7 @@ export class ResearchPapersService {
     return {
       researchPapers,
       totalCount: researchPapers.length,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
 }

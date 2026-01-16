@@ -11,7 +11,7 @@ export class TrusteesService {
   constructor(
     private prisma: PrismaService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Get all trustees with pagination and filtering
@@ -56,10 +56,9 @@ export class TrusteesService {
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
       },
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
-
 
   /**
    * Get a trustee by ID
@@ -68,7 +67,7 @@ export class TrusteesService {
    */
   async getTrusteeById(id: string) {
     const trustee = await this.prisma.trustee.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!trustee) {
@@ -107,7 +106,7 @@ export class TrusteesService {
 
         imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `trustee-${sanitizedName}-${timestamp}-${randomHash}`
+          `trustee-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
 
@@ -123,10 +122,9 @@ export class TrusteesService {
 
         popupImgUrl = await this.fileUploadService.uploadImage(
           popupImgFile,
-          `trustee-popup-${sanitizedName}-${timestamp}-${randomHash}`
+          `trustee-popup-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
-
       // Create trustee with uploaded file URLs
       const created = await this.prisma.trustee.create({
         data: {
@@ -142,7 +140,9 @@ export class TrusteesService {
         },
       });
 
-      this.logger.log(`Created new trustee: ${created.title} (ID: ${created.id})`);
+      this.logger.log(
+        `Created new trustee: ${created.title} (ID: ${created.id})`,
+      );
       return created;
     } catch (error) {
       this.logger.error(`Failed to create trustee: ${error.message}`);
@@ -165,7 +165,9 @@ export class TrusteesService {
     popupImgFile?: Multer.File,
   ) {
     // Check if trustee exists
-    const existingTrustee = await this.prisma.trustee.findUnique({ where: { id } });
+    const existingTrustee = await this.prisma.trustee.findUnique({
+      where: { id },
+    });
 
     if (!existingTrustee) {
       throw new NotFoundException(`Trustee with ID ${id} not found`);
@@ -187,15 +189,18 @@ export class TrusteesService {
 
         const imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `trustee-${formattedName}-${timestamp}-${randomHash}`
+          `trustee-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.image = imageUrl;
 
         // Delete old image if it exists and is in our assets
-        if (existingTrustee.image && existingTrustee.image.startsWith('/assets/')) {
+        if (
+          existingTrustee.image &&
+          existingTrustee.image.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingTrustee.image.replace('/assets/', '')
+            existingTrustee.image.replace('/assets/', ''),
           );
         }
       }
@@ -213,15 +218,18 @@ export class TrusteesService {
 
         const popupImgUrl = await this.fileUploadService.uploadImage(
           popupImgFile,
-          `trustee-popup-${formattedName}-${timestamp}-${randomHash}`
+          `trustee-popup-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.popupImg = popupImgUrl;
 
         // Delete old popup image if it exists and is in our assets
-        if (existingTrustee.popupImg && existingTrustee.popupImg.startsWith('/assets/')) {
+        if (
+          existingTrustee.popupImg &&
+          existingTrustee.popupImg.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingTrustee.popupImg.replace('/assets/', '')
+            existingTrustee.popupImg.replace('/assets/', ''),
           );
         }
       }
@@ -229,15 +237,24 @@ export class TrusteesService {
       // Create update data object with only the fields that should be updated
       const prismaUpdateData: any = {};
 
-      if (updateData.title !== undefined) prismaUpdateData.title = updateData.title;
-      if (updateData.desig !== undefined) prismaUpdateData.desig = updateData.desig;
-      if (updateData.popupdesc !== undefined) prismaUpdateData.popupdesc = updateData.popupdesc;
-      if (updateData.link !== undefined) prismaUpdateData.link = updateData.link;
-      if (updateData.socialMedia !== undefined) prismaUpdateData.socialMedia = updateData.socialMedia;
-      if (updateData.order !== undefined) prismaUpdateData.order = updateData.order;
-      if (updateData.active !== undefined) prismaUpdateData.active = updateData.active;
-      if (updateData.image !== undefined) prismaUpdateData.image = updateData.image;
-      if (updateData.popupImg !== undefined) prismaUpdateData.popupImg = updateData.popupImg;
+      if (updateData.title !== undefined)
+        prismaUpdateData.title = updateData.title;
+      if (updateData.desig !== undefined)
+        prismaUpdateData.desig = updateData.desig;
+      if (updateData.popupdesc !== undefined)
+        prismaUpdateData.popupdesc = updateData.popupdesc;
+      if (updateData.link !== undefined)
+        prismaUpdateData.link = updateData.link;
+      if (updateData.socialMedia !== undefined)
+        prismaUpdateData.socialMedia = updateData.socialMedia;
+      if (updateData.order !== undefined)
+        prismaUpdateData.order = updateData.order;
+      if (updateData.active !== undefined)
+        prismaUpdateData.active = updateData.active;
+      if (updateData.image !== undefined)
+        prismaUpdateData.image = updateData.image;
+      if (updateData.popupImg !== undefined)
+        prismaUpdateData.popupImg = updateData.popupImg;
 
       // Update trustee in database
       const updatedTrustee = await this.prisma.trustee.update({
@@ -263,7 +280,7 @@ export class TrusteesService {
 
     // Delete from database
     await this.prisma.trustee.delete({
-      where: { id }
+      where: { id },
     });
 
     return;

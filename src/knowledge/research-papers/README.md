@@ -18,8 +18,7 @@ This module provides API endpoints for managing research papers and their sector
 
 - `id`: Unique identifier
 - `image`: Image URL
-- `title`: Title of the research paper
-- `description`: Description of the research paper
+- `title`: Title of the research paper (Required)
 - `link`: Link to the PDF or document
 - `date`: Publication date
 - `active`: Whether the research paper is active

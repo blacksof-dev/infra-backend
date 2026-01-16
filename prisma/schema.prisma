@@ -174,8 +174,7 @@ model Sector {
 model ResearchPaper {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   image       String
-  title       String?
-  description String
+  title       String
   link        String
   date        DateTime?
   active      Boolean    @default(true)
@@ -422,6 +421,7 @@ model InfrashaktiAwardee {
   videoUrlYoutube String
   thumbnailUrl    String
   iconUrl         String
+  partnersLogo    String?
   active          Boolean              @default(true)
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
@@ -459,15 +459,16 @@ model Member {
 }
 
 model Gallery {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  imageUrl    String
-  description String
-  year        String
-  event       String
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl     String
+  description  String
+  event        String
+  date         DateTime  @default(now())
+  activeOnMain Boolean   @default(true)
+  archived     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   @@map("galleries")
 }

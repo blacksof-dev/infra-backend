@@ -43,9 +43,18 @@ export class CreateInfrashaktiAwardeeDto {
     description: 'Whether the awardee is active',
     default: true,
   })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  })
   @IsBoolean()
   @IsOptional()
   active?: boolean;
+
+  @IsString()
+  @IsOptional()
+  partnersLogo?: string;
 }
 
 export class UpdateInfrashaktiAwardeeDto extends PartialType(

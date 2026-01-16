@@ -185,7 +185,7 @@ export class AboutUsSectorService {
         data.sector = updateSectorDto.sector;
       }
       if (updateSectorDto.active !== undefined) {
-        data.active = Boolean(updateSectorDto.active);
+        data.active = updateSectorDto.active;
       }
       if (files?.imageFile && files.imageFile.length > 0) {
         const imageFile = files.imageFile[0];

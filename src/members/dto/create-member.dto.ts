@@ -41,6 +41,7 @@ export class CreateMemberDto {
     (o) =>
       o.socialType !== undefined &&
       o.socialType !== null &&
+      o.socialType !== 'null' &&
       o.socialType !== '',
   )
   @IsNotEmpty({ message: 'socialUrl is required if socialType is provided' })
@@ -54,7 +55,10 @@ export class CreateMemberDto {
   @IsEnum(SocialType)
   @ValidateIf(
     (o) =>
-      o.socialUrl !== undefined && o.socialUrl !== null && o.socialUrl !== '',
+      o.socialUrl !== undefined &&
+      o.socialUrl !== null &&
+      o.socialUrl !== '' &&
+      o.socialUrl !== 'null',
   )
   @IsNotEmpty({ message: 'socialType is required if socialUrl is provided' })
   socialType?: string;

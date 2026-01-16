@@ -15,18 +15,18 @@ export class CreateGalleryDto {
   @IsNotEmpty()
   description: string;
 
-  @ApiProperty({ description: 'Year of the image (e.g., 2025)' })
-  @IsString()
-  @IsNotEmpty()
-  year: string;
-
   @ApiProperty({ description: 'Event name (e.g., Infrashakti Awards)' })
   @IsString()
   @IsNotEmpty()
   event: string;
 
+  @ApiProperty({ description: 'Date of the event (ISO format or date string)' })
+  @IsNotEmpty()
+  @Type(() => Date)
+  date: Date;
+
   @ApiPropertyOptional({
-    description: 'Whether the image is active',
+    description: 'Whether the image is visible on the main page',
     default: true,
   })
   @IsOptional()
@@ -36,7 +36,20 @@ export class CreateGalleryDto {
     return value;
   })
   @IsBoolean()
-  active?: boolean;
+  activeOnMain?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether the image is archived',
+    default: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  })
+  @IsBoolean()
+  archived?: boolean;
 }
 
 export class UpdateGalleryDto extends PartialType(CreateGalleryDto) {}
@@ -66,7 +79,7 @@ export class GalleryQueryDto {
   @IsString()
   event?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by active status' })
+  @ApiPropertyOptional({ description: 'Filter by archived status' })
   @IsOptional()
   @Transform(({ value }) => {
     if (value === 'true' || value === '1') return true;
@@ -74,5 +87,15 @@ export class GalleryQueryDto {
     return value;
   })
   @IsBoolean()
-  active?: boolean;
+  archived?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by active on main status' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  })
+  @IsBoolean()
+  activeOnMain?: boolean;
 }

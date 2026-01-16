@@ -29,6 +29,10 @@ import { ResearchPapersService } from './research-papers.service';
 import { CreateResearchPaperDto } from './dto/create-research-paper.dto';
 import { UpdateResearchPaperDto } from './dto/update-research-paper.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import {
+  ResearchPaperQueryDto,
+  SectorResearchPaperQueryDto,
+} from './dto/research-paper-query.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles, UserRole } from '../../auth/decorators/roles.decorator';
@@ -36,7 +40,7 @@ import { Roles, UserRole } from '../../auth/decorators/roles.decorator';
 @ApiTags('Knowledge')
 @Controller('knowledge/research-papers')
 export class ResearchPapersController {
-  constructor(private readonly service: ResearchPapersService) { }
+  constructor(private readonly service: ResearchPapersService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,7 +48,8 @@ export class ResearchPapersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a new research paper',
-    description: 'Creates a new research paper with file uploads. Requires admin privileges.',
+    description:
+      'Creates a new research paper with file uploads. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -65,13 +70,10 @@ export class ResearchPapersController {
           type: 'string',
           description: 'The title of the research paper',
         },
-        description: {
-          type: 'string',
-          description: 'The description of the research paper',
-        },
         date: {
           type: 'string',
-          description: 'The publication date of the research paper (YYYY-MM-DD)',
+          description:
+            'The publication date of the research paper (YYYY-MM-DD)',
         },
         active: {
           type: 'boolean',
@@ -82,10 +84,11 @@ export class ResearchPapersController {
           items: {
             type: 'string',
           },
-          description: 'Array of sector IDs associated with this research paper',
+          description:
+            'Array of sector IDs associated with this research paper',
         },
       },
-      required: ['imageFile', 'pdfFile', 'description', 'sectorIds'],
+      required: ['imageFile', 'pdfFile', 'title', 'sectorIds'],
     },
   })
   @ApiResponse({
@@ -99,20 +102,19 @@ export class ResearchPapersController {
     FileFieldsInterceptor([
       { name: 'imageFile', maxCount: 1 },
       { name: 'pdfFile', maxCount: 1 },
-    ])
+    ]),
   )
   create(
     @Body() body: any,
     @UploadedFiles()
     files: {
-      imageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
+      imageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
     },
   ) {
     // Parse form data properly
     const createResearchPaperDto: CreateResearchPaperDto = {
-      title: body.title || undefined,
-      description: body.description,
+      title: body.title,
       date: body.date || undefined,
       // Parse active as boolean
       active: body.active === 'true' || body.active === true,
@@ -121,7 +123,7 @@ export class ResearchPapersController {
         ? body.sectorIds
         : body.sectorIds?.includes(',')
           ? body.sectorIds.split(',')
-          : [body.sectorIds]
+          : [body.sectorIds],
     };
 
     return this.service.create(createResearchPaperDto, files);
@@ -130,52 +132,32 @@ export class ResearchPapersController {
   @Get()
   @ApiOperation({
     summary: 'Get all research papers',
-    description: 'Retrieves a list of all research papers. This endpoint is public.',
-  })
-  @ApiQuery({
-    name: 'activeOnly',
-    required: false,
-    type: Boolean,
-    description: 'If true, returns only active research papers',
-  })
-  @ApiQuery({
-    name: 'sectorId',
-    required: false,
-    type: String,
-    description: 'Filter research papers by sector ID',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (starts from 1)',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-    example: 10,
+    description:
+      'Retrieves a list of all research papers. This endpoint is public.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of research papers retrieved successfully.',
   })
-  findAll(
-    @Query('activeOnly') activeOnly?: boolean,
-    @Query('sectorId') sectorId?: string,
-    @Query() paginationDto?: PaginationDto,
-  ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    return this.service.findAll(activeOnly === true, sectorId, page, limit);
+  findAll(@Query() query: ResearchPaperQueryDto) {
+    const { page = 1, limit = 10, activeOnly = false, sectorId } = query;
+    return this.service.findAll(activeOnly, sectorId, page, limit);
   }
 
+  @Get('legacy')
+  @ApiOperation({
+    summary: 'Get legacy research papers',
+    description: 'Retrieves legacy (static) research papers data.',
+  })
+  getLegacyResearchPapers() {
+    return this.service.getLegacyResearchPapers();
+  }
 
   @Get(':id')
   @ApiOperation({
     summary: 'Get a research paper by ID',
-    description: 'Retrieves a specific research paper by its ID. This endpoint is public.',
+    description:
+      'Retrieves a specific research paper by its ID. This endpoint is public.',
   })
   @ApiParam({
     name: 'id',
@@ -193,31 +175,12 @@ export class ResearchPapersController {
   @Get('by-sector/:sectorId')
   @ApiOperation({
     summary: 'Get research papers by sector',
-    description: 'Retrieves research papers filtered by sector ID. This endpoint is public.',
+    description:
+      'Retrieves research papers filtered by sector ID. This endpoint is public.',
   })
   @ApiParam({
     name: 'sectorId',
     description: 'The ID of the sector to filter by',
-  })
-  @ApiQuery({
-    name: 'activeOnly',
-    required: false,
-    type: Boolean,
-    description: 'If true, returns only active research papers',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (starts from 1)',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-    example: 10,
   })
   @ApiResponse({
     status: 200,
@@ -226,11 +189,15 @@ export class ResearchPapersController {
   @ApiResponse({ status: 404, description: 'Sector not found.' })
   getResearchPapersBySector(
     @Param('sectorId') sectorId: string,
-    @Query('activeOnly') activeOnly?: boolean,
-    @Query() paginationDto?: PaginationDto,
+    @Query() query: SectorResearchPaperQueryDto,
   ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    return this.service.getResearchPapersBySector(sectorId, activeOnly === true, page, limit);
+    const { page = 1, limit = 10, activeOnly = false } = query;
+    return this.service.getResearchPapersBySector(
+      sectorId,
+      activeOnly,
+      page,
+      limit,
+    );
   }
 
   @Patch(':id')
@@ -239,7 +206,8 @@ export class ResearchPapersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a research paper',
-    description: 'Updates a specific research paper by its ID. Supports file uploads. Requires admin privileges.',
+    description:
+      'Updates a specific research paper by its ID. Supports file uploads. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -264,13 +232,10 @@ export class ResearchPapersController {
           type: 'string',
           description: 'The title of the research paper',
         },
-        description: {
-          type: 'string',
-          description: 'The description of the research paper',
-        },
         date: {
           type: 'string',
-          description: 'The publication date of the research paper (YYYY-MM-DD)',
+          description:
+            'The publication date of the research paper (YYYY-MM-DD)',
         },
         active: {
           type: 'boolean',
@@ -281,7 +246,8 @@ export class ResearchPapersController {
           items: {
             type: 'string',
           },
-          description: 'Array of sector IDs associated with this research paper',
+          description:
+            'Array of sector IDs associated with this research paper',
         },
       },
       required: [],
@@ -299,15 +265,15 @@ export class ResearchPapersController {
     FileFieldsInterceptor([
       { name: 'imageFile', maxCount: 1 },
       { name: 'pdfFile', maxCount: 1 },
-    ])
+    ]),
   )
   update(
     @Param('id') id: string,
     @Body() body: any,
     @UploadedFiles()
     files: {
-      imageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
+      imageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
     },
   ) {
     // Parse form data properly
@@ -315,12 +281,12 @@ export class ResearchPapersController {
 
     // Add fields only if they exist in the request body
     if (body.title !== undefined) updateResearchPaperDto.title = body.title;
-    if (body.description !== undefined) updateResearchPaperDto.description = body.description;
     if (body.date !== undefined) updateResearchPaperDto.date = body.date;
 
     // Parse active as boolean if provided
     if (body.active !== undefined) {
-      updateResearchPaperDto.active = body.active === 'true' || body.active === true;
+      updateResearchPaperDto.active =
+        body.active === 'true' || body.active === true;
     }
 
     // Parse sectorIds as array if provided
@@ -338,7 +304,9 @@ export class ResearchPapersController {
       }
 
       // Filter out empty strings
-      const filteredSectorIds = sectorIds.filter(id => id && id.trim() !== '');
+      const filteredSectorIds = sectorIds.filter(
+        (id) => id && id.trim() !== '',
+      );
 
       // If array is empty after filtering, don't include it in the update
       if (filteredSectorIds.length > 0) {
@@ -355,7 +323,8 @@ export class ResearchPapersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Toggle research paper status',
-    description: 'Toggles the active status of a specific research paper. Requires admin privileges.',
+    description:
+      'Toggles the active status of a specific research paper. Requires admin privileges.',
   })
   @ApiParam({
     name: 'id',
@@ -379,7 +348,8 @@ export class ResearchPapersController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a research paper',
-    description: 'Deletes a specific research paper by its ID. Requires admin privileges.',
+    description:
+      'Deletes a specific research paper by its ID. Requires admin privileges.',
   })
   @ApiParam({
     name: 'id',
