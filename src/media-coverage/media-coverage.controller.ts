@@ -9,10 +9,9 @@ import {
   UseGuards,
   Body,
   UseInterceptors,
-  UploadedFile,
   HttpStatus,
   HttpCode,
-  BadRequestException,
+  UploadedFiles,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,7 +26,7 @@ import {
   ApiForbiddenResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
 import { MediaCoverageService } from './media-coverage.service';
 import { CreateMediaCoverageDto } from './dto/create-media-coverage.dto';
@@ -40,7 +39,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @ApiTags('Archives - Media Coverage')
 @Controller('archives/media-coverage')
 export class MediaCoverageController {
-  constructor(private readonly service: MediaCoverageService) { }
+  constructor(private readonly service: MediaCoverageService) {}
 
   /**
    * Get all media coverage with pagination and filtering
@@ -49,7 +48,8 @@ export class MediaCoverageController {
   @Get()
   @ApiOperation({
     summary: 'Get all media coverage',
-    description: 'Retrieves all media coverage with pagination and filtering. This endpoint is public and does not require authentication.',
+    description:
+      'Retrieves all media coverage with pagination and filtering. This endpoint is public and does not require authentication.',
   })
   @ApiQuery({
     name: 'page',
@@ -68,9 +68,16 @@ export class MediaCoverageController {
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Search term to filter by title, subtitle, or author name',
+    description: 'Search term to filter by title or author',
     type: String,
     example: 'infrastructure',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    description: 'Year of publication to filter by',
+    type: String,
+    example: '2023',
   })
   @ApiQuery({
     name: 'sortBy',
@@ -89,42 +96,40 @@ export class MediaCoverageController {
   @ApiQuery({
     name: 'activeOnly',
     required: false,
-    description: 'If true, returns only active media coverage; if false, returns all items regardless of active status (default: true)',
+    description:
+      'If true, returns only active media coverage; if false, returns all items regardless of active status (default: true)',
     type: Boolean,
     example: true,
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Media coverage retrieved successfully',
-    schema: {
-      example: {
-        data: [
-          {
-            id: '60d21b4667d0d8992e610c85',
-            title: 'Infrastructure Development in Rural Areas',
-            subtitle: 'A comprehensive analysis of recent initiatives',
-            authorName: 'The Economic Times',
-            date: 'July 15, 2023',
-            coverImage: '/assets/images/media-coverage/infrastructure-development.jpg',
-            active: true,
-            createdAt: '2023-06-10T12:00:00.000Z',
-            updatedAt: '2023-06-10T12:00:00.000Z',
-          },
-        ],
-        meta: {
-          total: 100,
-          page: 1,
-          limit: 10,
-          totalPages: 10,
-          hasNext: true,
-          hasPrevious: false,
-        },
-        lastUpdated: '2023-06-10T12:00:00.000Z',
-      },
-    },
   })
   async findAll(@Query() queryMediaCoverageDto: QueryMediaCoverageDto) {
     return this.service.findAll(queryMediaCoverageDto);
+  }
+
+  /**
+   * Get all unique years from media coverage publication dates
+   * This endpoint is public and does not require authentication
+   */
+  @Get('years')
+  @ApiOperation({
+    summary: 'Get all unique years',
+    description:
+      'Retrieves all unique years from media coverage publication dates. This endpoint is public and does not require authentication.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Years retrieved successfully',
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      example: ['2024', '2023', '2022'],
+    },
+  })
+  async getYears() {
+    return this.service.getYears();
   }
 
   /**
@@ -134,42 +139,24 @@ export class MediaCoverageController {
   @Get('recent')
   @ApiOperation({
     summary: 'Get recent media coverage',
-    description: 'Retrieves the 3 most recent media coverage items. This endpoint is public and does not require authentication.',
+    description:
+      'Retrieves the 3 most recent media coverage items. This endpoint is public and does not require authentication.',
   })
   @ApiQuery({
     name: 'activeOnly',
     required: false,
-    description: 'If true, returns only active media coverage items; if false, returns all items regardless of active status (default: true)',
+    description: 'If true, returns only active media coverage (default: true)',
     type: Boolean,
     example: true,
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Recent media coverage retrieved successfully',
-    schema: {
-      example: {
-        data: [
-
-          {
-            id: '60d21b4667d0d8992e610c87',
-            title: 'Transportation Infrastructure Challenges',
-            subtitle: 'Addressing the growing needs of metropolitan areas',
-            authorName: 'India Today',
-            date: 'May 10, 2023',
-            coverImage: '/assets/images/media-coverage/transportation.jpg',
-            active: true,
-            createdAt: '2023-05-01T12:00:00.000Z',
-            updatedAt: '2023-05-01T12:00:00.000Z',
-          }
-        ],
-        count: 3,
-        lastUpdated: '2023-06-10T12:00:00.000Z',
-      },
-    },
   })
-  async getRecentMediaCoverage(@Query('activeOnly') activeOnly?: string) {
-    const isActiveOnly = activeOnly === undefined ? true : activeOnly.toLowerCase() === 'true';
-    return this.service.getRecentMediaCoverage(isActiveOnly);
+  async getRecent(@Query('activeOnly') activeOnly?: string) {
+    return this.service.getRecentMediaCoverage(
+      activeOnly === undefined ? true : activeOnly === 'true',
+    );
   }
 
   /**
@@ -178,8 +165,9 @@ export class MediaCoverageController {
    */
   @Get(':id')
   @ApiOperation({
-    summary: 'Get a specific media coverage',
-    description: 'Retrieves a specific media coverage by ID. This endpoint is public and does not require authentication.',
+    summary: 'Get a specific media coverage by ID',
+    description:
+      'Retrieves a specific media coverage entry by its ID. This endpoint is public and does not require authentication.',
   })
   @ApiParam({
     name: 'id',
@@ -189,19 +177,6 @@ export class MediaCoverageController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Media coverage retrieved successfully',
-    schema: {
-      example: {
-        id: '60d21b4667d0d8992e610c85',
-        title: 'Infrastructure Development in Rural Areas',
-        subtitle: 'A comprehensive analysis of recent initiatives',
-        authorName: 'The Economic Times',
-        date: 'July 15, 2023',
-        coverImage: '/assets/images/media-coverage/infrastructure-development.jpg',
-        active: true,
-        createdAt: '2023-06-10T12:00:00.000Z',
-        updatedAt: '2023-06-10T12:00:00.000Z',
-      },
-    },
   })
   @ApiNotFoundResponse({
     description: 'Media coverage not found',
@@ -220,18 +195,14 @@ export class MediaCoverageController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a new media coverage',
-    description: 'Creates a new media coverage entry with file upload. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Creates a new media coverage entry with optional multiple file uploads. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        category: {
-          type: 'string',
-          description: 'Category of the media coverage',
-          example: 'News',
-        },
         title: {
           type: 'string',
           description: 'Title of the media coverage (optional)',
@@ -242,14 +213,15 @@ export class MediaCoverageController {
           description: 'Date of publication in yyyy/mm/dd format',
           example: '2023/07/15',
         },
-        description: {
+        author: {
           type: 'string',
-          description: 'Description of the media coverage',
-          example: 'A comprehensive analysis of recent initiatives',
+          description: 'Author of the media coverage',
+          example: 'The Economic Times',
         },
         link: {
           type: 'string',
-          description: 'Link to the media coverage',
+          description:
+            'Link to the media coverage article (optional if PDF or Image is provided)',
           example: 'https://example.com/article',
         },
         active: {
@@ -260,10 +232,22 @@ export class MediaCoverageController {
         coverImageFile: {
           type: 'string',
           format: 'binary',
-          description: 'Cover image file to upload',
+          description: 'Cover image file to upload (optional)',
+        },
+        pdfFile: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'PDF file to upload (optional if Link or Image is provided)',
+        },
+        imageFile: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Image file to upload (optional if Link or PDF is provided)',
         },
       },
-      required: ['category', 'date', 'description', 'link', 'coverImageFile'],
+      required: ['date', 'author'],
     },
   })
   @ApiResponse({
@@ -276,27 +260,35 @@ export class MediaCoverageController {
   @ApiForbiddenResponse({
     description: 'Forbidden - Insufficient permissions',
   })
-  @UseInterceptors(FileInterceptor('coverImageFile'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'coverImageFile', maxCount: 1 },
+      { name: 'pdfFile', maxCount: 1 },
+      { name: 'imageFile', maxCount: 1 },
+    ]),
+  )
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() body: any,
-    @UploadedFile() coverImageFile: Multer.File
+    @UploadedFiles()
+    files: {
+      coverImageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
+      imageFile?: Multer.File[];
+    },
   ) {
-    // Parse form data properly
     const createMediaCoverageDto: CreateMediaCoverageDto = {
-      category: body.category,
       title: body.title,
       date: body.date,
-      description: body.description,
+      author: body.author,
       link: body.link,
-      active: body.active === undefined ? true : body.active === 'true' || body.active === true,
+      active:
+        body.active === undefined
+          ? true
+          : body.active === 'true' || body.active === true,
     };
 
-    if (!coverImageFile) {
-      throw new BadRequestException('Cover image file is required');
-    }
-
-    return this.service.create(createMediaCoverageDto, coverImageFile);
+    return this.service.create(createMediaCoverageDto, files);
   }
 
   /**
@@ -309,7 +301,8 @@ export class MediaCoverageController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a media coverage',
-    description: 'Deletes a specific media coverage. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Deletes a specific media coverage and its associated files. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiParam({
     name: 'id',
@@ -335,6 +328,33 @@ export class MediaCoverageController {
   }
 
   /**
+   * Clear all three: pdf file, image file and link from a media coverage entry
+   * This endpoint requires authentication (ADMIN or SUPERADMIN)
+   */
+  @Delete(':id/content')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'ADMIN')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Clear media content (PDF, Image, Link)',
+    description:
+      'Clears the pdfFile, imageFile, and link from a media coverage record. This endpoint requires ADMIN or SUPERADMIN authentication.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the media coverage to clear content for',
+    example: '60d21b4667d0d8992e610c85',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Media content cleared successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async clearContent(@Param('id') id: string) {
+    return this.service.clearMediaContent(id);
+  }
+
+  /**
    * Update a media coverage
    * This endpoint requires authentication (ADMIN or SUPERADMIN)
    */
@@ -344,7 +364,8 @@ export class MediaCoverageController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a media coverage',
-    description: 'Updates a specific media coverage entry with optional file upload. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Updates a specific media coverage entry with optional multiple file uploads. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -356,11 +377,6 @@ export class MediaCoverageController {
     schema: {
       type: 'object',
       properties: {
-        category: {
-          type: 'string',
-          description: 'Category of the media coverage (optional)',
-          example: 'News',
-        },
         title: {
           type: 'string',
           description: 'Title of the media coverage (optional)',
@@ -371,14 +387,14 @@ export class MediaCoverageController {
           description: 'Date of publication in yyyy/mm/dd format (optional)',
           example: '2023/07/15',
         },
-        description: {
+        author: {
           type: 'string',
-          description: 'Description of the media coverage (optional)',
-          example: 'A comprehensive analysis of recent initiatives',
+          description: 'Author of the media coverage (optional)',
+          example: 'The Economic Times',
         },
         link: {
           type: 'string',
-          description: 'Link to the media coverage (optional)',
+          description: 'Link to the media coverage article (optional)',
           example: 'https://example.com/article',
         },
         active: {
@@ -391,8 +407,17 @@ export class MediaCoverageController {
           format: 'binary',
           description: 'Cover image file to upload (optional)',
         },
+        pdfFile: {
+          type: 'string',
+          format: 'binary',
+          description: 'PDF file to upload (optional)',
+        },
+        imageFile: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file to upload (optional)',
+        },
       },
-      required: [],
     },
   })
   @ApiResponse({
@@ -408,25 +433,35 @@ export class MediaCoverageController {
   @ApiNotFoundResponse({
     description: 'Media coverage not found',
   })
-  @UseInterceptors(FileInterceptor('coverImageFile'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'coverImageFile', maxCount: 1 },
+      { name: 'pdfFile', maxCount: 1 },
+      { name: 'imageFile', maxCount: 1 },
+    ]),
+  )
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFile() coverImageFile?: Multer.File,
+    @UploadedFiles()
+    files: {
+      coverImageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
+      imageFile?: Multer.File[];
+    },
   ) {
-    // Parse form data properly - all fields are optional
     const updateMediaCoverageDto: UpdateMediaCoverageDto = {};
 
-    if (body.category !== undefined) updateMediaCoverageDto.category = body.category;
     if (body.title !== undefined) updateMediaCoverageDto.title = body.title;
     if (body.date !== undefined) updateMediaCoverageDto.date = body.date;
-    if (body.description !== undefined) updateMediaCoverageDto.description = body.description;
+    if (body.author !== undefined) updateMediaCoverageDto.author = body.author;
     if (body.link !== undefined) updateMediaCoverageDto.link = body.link;
     if (body.active !== undefined) {
-      updateMediaCoverageDto.active = body.active === 'true' || body.active === true;
+      updateMediaCoverageDto.active =
+        body.active === 'true' || body.active === true;
     }
 
-    return this.service.update(id, updateMediaCoverageDto, coverImageFile);
+    return this.service.update(id, updateMediaCoverageDto, files);
   }
 }
