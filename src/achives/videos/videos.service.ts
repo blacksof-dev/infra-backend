@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
@@ -20,7 +25,7 @@ export class VideosService {
     private readonly prisma: PrismaService,
     private readonly categoriesService: CategoriesService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Create a new video
@@ -31,7 +36,9 @@ export class VideosService {
   async create(createVideoDto: CreateVideoDto, imageFile?: Multer.File) {
     try {
       // Validate that all categories exist
-      await this.categoriesService.validateCategoryIds(createVideoDto.categoryIds);
+      await this.categoriesService.validateCategoryIds(
+        createVideoDto.categoryIds,
+      );
 
       let imageUrl = '';
 
@@ -47,7 +54,7 @@ export class VideosService {
 
         imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `video-${sanitizedTitle}-${timestamp}-${randomHash}`
+          `video-${sanitizedTitle}-${timestamp}-${randomHash}`,
         );
       }
 
@@ -62,7 +69,8 @@ export class VideosService {
           description: createVideoDto.description,
           link: createVideoDto.link,
           date,
-          active: createVideoDto.active !== undefined ? createVideoDto.active : true,
+          active:
+            createVideoDto.active !== undefined ? createVideoDto.active : true,
           categoryIds: createVideoDto.categoryIds,
         },
         include: {
@@ -70,7 +78,9 @@ export class VideosService {
         },
       });
 
-      this.logger.log(`Created new video: ${createVideoDto.title} (ID: ${video.id})`);
+      this.logger.log(
+        `Created new video: ${createVideoDto.title} (ID: ${video.id})`,
+      );
       return video;
     } catch (error) {
       this.logger.error(`Failed to create video: ${error.message}`);
@@ -86,25 +96,51 @@ export class VideosService {
    * @param limit - Number of items per page
    * @returns Paginated array of videos
    */
-  async findAll(activeOnly = false, categoryId?: string, page = 1, limit = 10) {
+  async findAll(
+    activeOnly: boolean | undefined,
+    categoryId?: string,
+    page = 1,
+    limit = 10,
+  ) {
+    this.logger.debug(
+      `findAll: activeOnly=${activeOnly}, categoryId=${categoryId}, page=${page}, limit=${limit}`,
+    );
+
     const where: any = {};
 
-    // Filter by active status if requested
-    if (activeOnly) {
+    // Filter by active status if provided
+    // If activeOnly is true, show only active. If false, show only inactive.
+    // However, the controller logic currently sets it to true by default or if 'true'.
+    // If the user wants to see ALL, the controller should probably pass undefined.
+    if (activeOnly === true) {
       where.active = true;
+    } else if (activeOnly === false) {
+      // In a standard "show all" scenario, we might want this to be empty.
+      // But let's allow explicit false to mean "show only inactive".
+      // To see all, we'll adjust the controller to pass undefined if no filter is wanted.
+      where.active = false;
     }
 
-    // Filter by category if provided
-    if (categoryId) {
+    // Filter by category if provided and valid
+    if (
+      categoryId &&
+      categoryId !== 'undefined' &&
+      categoryId !== 'null' &&
+      categoryId.trim() !== ''
+    ) {
       where.categoryIds = {
-        has: categoryId,
+        has: categoryId.trim(),
       };
     }
+
+    this.logger.debug(`Generated where clause: ${JSON.stringify(where)}`);
 
     const skip = (page - 1) * limit;
 
     // Get total count for pagination
-    const total = await (this.prisma as ExtendedPrismaService).video.count({ where });
+    const total = await (this.prisma as ExtendedPrismaService).video.count({
+      where,
+    });
 
     // Get the videos with pagination
     const videos = await (this.prisma as ExtendedPrismaService).video.findMany({
@@ -132,7 +168,7 @@ export class VideosService {
         hasNext,
         hasPrevious,
       },
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
 
@@ -146,12 +182,14 @@ export class VideosService {
       throw new BadRequestException('Video ID must be provided');
     }
 
-    const video = await (this.prisma as ExtendedPrismaService).video.findUnique({
-      where: { id },
-      include: {
-        categories: true, // Include related categories
+    const video = await (this.prisma as ExtendedPrismaService).video.findUnique(
+      {
+        where: { id },
+        include: {
+          categories: true, // Include related categories
+        },
       },
-    });
+    );
 
     if (!video) {
       throw new NotFoundException(`Video with ID '${id}' not found`);
@@ -167,14 +205,20 @@ export class VideosService {
    * @param imageFile - Optional image file
    * @returns The updated video
    */
-  async update(id: string, updateVideoDto: UpdateVideoDto, imageFile?: Multer.File) {
+  async update(
+    id: string,
+    updateVideoDto: UpdateVideoDto,
+    imageFile?: Multer.File,
+  ) {
     try {
       // Verify video exists
       const existingVideo = await this.findOne(id);
 
       // Validate categories if provided
       if (updateVideoDto.categoryIds) {
-        await this.categoriesService.validateCategoryIds(updateVideoDto.categoryIds);
+        await this.categoriesService.validateCategoryIds(
+          updateVideoDto.categoryIds,
+        );
       }
 
       // Parse date string to Date object if provided
@@ -196,7 +240,7 @@ export class VideosService {
 
         const imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `video-${formattedTitle}-${timestamp}-${randomHash}`
+          `video-${formattedTitle}-${timestamp}-${randomHash}`,
         );
 
         data.image = imageUrl;
@@ -204,12 +248,14 @@ export class VideosService {
         // Delete old image if it exists and is in our assets
         if (existingVideo.image && existingVideo.image.startsWith('/assets/')) {
           await this.fileUploadService.deleteFile(
-            existingVideo.image.replace('/assets/', '')
+            existingVideo.image.replace('/assets/', ''),
           );
         }
       }
 
-      const updatedVideo = await (this.prisma as ExtendedPrismaService).video.update({
+      const updatedVideo = await (
+        this.prisma as ExtendedPrismaService
+      ).video.update({
         where: { id },
         data,
         include: {
@@ -268,11 +314,15 @@ export class VideosService {
    * @param limit - Number of items per page
    * @returns Array of videos in the specified category
    */
-  async getVideosByCategory(categoryId: string, activeOnly = false, page = 1, limit = 10) {
+  async getVideosByCategory(
+    categoryId: string,
+    activeOnly = false,
+    page = 1,
+    limit = 10,
+  ) {
     // Verify category exists
     await this.categoriesService.findOne(categoryId);
 
     return this.findAll(activeOnly, categoryId, page, limit);
   }
-
 }

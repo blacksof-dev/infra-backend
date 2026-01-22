@@ -1,6 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateEngagementDto, UpdateEngagementDto, QueryEngagementsDto, SortOrder } from './dto';
+import {
+  CreateEngagementDto,
+  UpdateEngagementDto,
+  QueryEngagementsDto,
+  SortOrder,
+} from './dto';
 
 // Note: This is a temporary workaround until the Prisma client is regenerated
 interface ExtendedPrismaService extends PrismaService {
@@ -11,7 +16,7 @@ interface ExtendedPrismaService extends PrismaService {
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Transform engagement response to ensure consistent API format
@@ -21,8 +26,8 @@ export class EngagementsService {
   private transformEngagementResponse(engagement: any) {
     // Handle backward compatibility
     const dayTime = engagement.dayTime || 'Time not specified';
-    const desc = engagement.desc || engagement.description || 'No description available';
-    const ctaText = engagement.ctaText || 'Learn More';
+    const desc =
+      engagement.desc || engagement.description || 'No description available';
 
     // Ensure details have the required structure
     let details = engagement.details || {};
@@ -40,15 +45,15 @@ export class EngagementsService {
     }
 
     // Ensure details has required structure
-    const processedDetails = {
+    const processedDetails: any = {
       images: details.images || [],
       date: details.date,
       content: details.content || desc,
-      cta: details.cta || {
-        ctaText: ctaText,
-        link: details.link || '#'
-      }
     };
+
+    if (details.cta) {
+      processedDetails.cta = details.cta;
+    }
 
     return {
       id: engagement.id,
@@ -56,7 +61,6 @@ export class EngagementsService {
       dayTime: dayTime,
       meetingType: engagement.meetingType,
       desc: desc,
-      ctaText: ctaText,
       details: processedDetails,
       active: engagement.active,
       createdAt: engagement.createdAt,
@@ -79,19 +83,22 @@ export class EngagementsService {
       };
 
       // Make sure the data structure matches the Prisma schema
-      const engagement = await (this.prisma as ExtendedPrismaService).engagement.create({
+      const engagement = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.create({
         data: {
           date: createEngagementDto.date,
           dayTime: createEngagementDto.dayTime,
           meetingType: createEngagementDto.meetingType,
           desc: createEngagementDto.desc,
-          ctaText: createEngagementDto.ctaText,
           details: processedDetails,
           active: createEngagementDto.active ?? true,
         },
       });
 
-      this.logger.log(`Created new engagement for date: ${createEngagementDto.date}`);
+      this.logger.log(
+        `Created new engagement for date: ${createEngagementDto.date}`,
+      );
       return this.transformEngagementResponse(engagement);
     } catch (error) {
       this.logger.error(`Failed to create engagement: ${error.message}`);
@@ -140,10 +147,14 @@ export class EngagementsService {
       }
 
       // Get total count for pagination
-      const total = await (this.prisma as ExtendedPrismaService).engagement.count({ where });
+      const total = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.count({ where });
 
       // Get the engagements
-      const engagements = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+      const engagements = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findMany({
         where,
         skip,
         take: limit,
@@ -158,8 +169,8 @@ export class EngagementsService {
       const hasPrevious = page > 1;
 
       // Transform all engagements to ensure consistent format
-      const transformedEngagements = engagements.map(engagement =>
-        this.transformEngagementResponse(engagement)
+      const transformedEngagements = engagements.map((engagement) =>
+        this.transformEngagementResponse(engagement),
       );
 
       return {
@@ -186,15 +197,21 @@ export class EngagementsService {
    */
   async getYears() {
     try {
-      const engagements = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+      const engagements = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findMany({
         select: { date: true },
         orderBy: { date: 'desc' },
       });
 
       // Extract unique years from date strings (format: YYYY-MM-DD)
-      const years = [...new Set(
-        engagements.map(engagement => parseInt(engagement.date.substring(0, 4)))
-      )].sort((a: number, b: number) => b - a); // Sort in descending order
+      const years = [
+        ...new Set(
+          engagements.map((engagement) =>
+            parseInt(engagement.date.substring(0, 4)),
+          ),
+        ),
+      ].sort((a: number, b: number) => b - a); // Sort in descending order
 
       return {
         years,
@@ -216,7 +233,9 @@ export class EngagementsService {
     try {
       const yearStr = year.toString();
 
-      const engagements = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+      const engagements = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findMany({
         where: {
           date: {
             startsWith: yearStr,
@@ -226,8 +245,8 @@ export class EngagementsService {
       });
 
       // Transform all engagements to ensure consistent format
-      const transformedEngagements = engagements.map(engagement =>
-        this.transformEngagementResponse(engagement)
+      const transformedEngagements = engagements.map((engagement) =>
+        this.transformEngagementResponse(engagement),
       );
 
       return {
@@ -237,7 +256,9 @@ export class EngagementsService {
         lastUpdated: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch engagements for year ${year}: ${error.message}`);
+      this.logger.error(
+        `Failed to fetch engagements for year ${year}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -258,7 +279,9 @@ export class EngagementsService {
       const yearStr = year.toString();
       const monthStr = month.toString().padStart(2, '0');
 
-      const engagements = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+      const engagements = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findMany({
         where: {
           date: {
             startsWith: `${yearStr}-${monthStr}`,
@@ -268,8 +291,8 @@ export class EngagementsService {
       });
 
       // Transform all engagements to ensure consistent format
-      const transformedEngagements = engagements.map(engagement =>
-        this.transformEngagementResponse(engagement)
+      const transformedEngagements = engagements.map((engagement) =>
+        this.transformEngagementResponse(engagement),
       );
 
       return {
@@ -280,7 +303,9 @@ export class EngagementsService {
         lastUpdated: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch engagements for ${year}-${month}: ${error.message}`);
+      this.logger.error(
+        `Failed to fetch engagements for ${year}-${month}: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -292,7 +317,9 @@ export class EngagementsService {
    */
   async findOne(id: string) {
     try {
-      const engagement = await (this.prisma as ExtendedPrismaService).engagement.findUnique({
+      const engagement = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findUnique({
         where: { id },
       });
 
@@ -322,23 +349,33 @@ export class EngagementsService {
       const data: any = {};
 
       // Only include fields that are present in the DTO
-      if (updateEngagementDto.date !== undefined) data.date = updateEngagementDto.date;
-      if (updateEngagementDto.dayTime !== undefined) data.dayTime = updateEngagementDto.dayTime;
-      if (updateEngagementDto.meetingType !== undefined) data.meetingType = updateEngagementDto.meetingType;
-      if (updateEngagementDto.desc !== undefined) data.desc = updateEngagementDto.desc;
-      if (updateEngagementDto.ctaText !== undefined) data.ctaText = updateEngagementDto.ctaText;
+      if (updateEngagementDto.date !== undefined)
+        data.date = updateEngagementDto.date;
+      if (updateEngagementDto.dayTime !== undefined)
+        data.dayTime = updateEngagementDto.dayTime;
+      if (updateEngagementDto.meetingType !== undefined)
+        data.meetingType = updateEngagementDto.meetingType;
+      if (updateEngagementDto.desc !== undefined)
+        data.desc = updateEngagementDto.desc;
+
       if (updateEngagementDto.details !== undefined) {
         // Ensure details have the required structure
         const processedDetails = {
           ...updateEngagementDto.details,
           // Ensure details.date exists
-          date: updateEngagementDto.details.date || updateEngagementDto.date || data.date,
+          date:
+            updateEngagementDto.details.date ||
+            updateEngagementDto.date ||
+            data.date,
         };
         data.details = processedDetails;
       }
-      if (updateEngagementDto.active !== undefined) data.active = updateEngagementDto.active;
+      if (updateEngagementDto.active !== undefined)
+        data.active = updateEngagementDto.active;
 
-      const updatedEngagement = await (this.prisma as ExtendedPrismaService).engagement.update({
+      const updatedEngagement = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.update({
         where: { id },
         data,
       });
@@ -384,7 +421,9 @@ export class EngagementsService {
       const todayStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
       // Find the closest upcoming event
-      const upcomingEvents = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+      const upcomingEvents = await (
+        this.prisma as ExtendedPrismaService
+      ).engagement.findMany({
         where: {
           date: {
             gte: todayStr, // Date is greater than or equal to today (upcoming)
@@ -396,11 +435,14 @@ export class EngagementsService {
         take: 1,
       });
 
-      const upcomingEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+      const upcomingEvent =
+        upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
       // If no upcoming event, get the most recent past event
       if (!upcomingEvent) {
-        const recentEvents = await (this.prisma as ExtendedPrismaService).engagement.findMany({
+        const recentEvents = await (
+          this.prisma as ExtendedPrismaService
+        ).engagement.findMany({
           where: {
             date: {
               lt: todayStr, // Date is less than today (past)
@@ -415,14 +457,18 @@ export class EngagementsService {
         const recentEvent = recentEvents.length > 0 ? recentEvents[0] : null;
 
         return {
-          event: recentEvent ? this.transformEngagementResponse(recentEvent) : null,
+          event: recentEvent
+            ? this.transformEngagementResponse(recentEvent)
+            : null,
           type: 'recent',
           lastUpdated: new Date().toISOString(),
         };
       }
 
       return {
-        event: upcomingEvent ? this.transformEngagementResponse(upcomingEvent) : null,
+        event: upcomingEvent
+          ? this.transformEngagementResponse(upcomingEvent)
+          : null,
         type: 'upcoming',
         lastUpdated: new Date().toISOString(),
       };

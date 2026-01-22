@@ -1,40 +1,48 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { EngagementImageDto } from './engagement-image.dto';
 import { EngagementCtaDto } from './engagement-cta.dto';
 
 export class EngagementDetailsDto {
-    @ApiProperty({
-        description: 'Array of images with descriptions',
-        type: [EngagementImageDto],
-    })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => EngagementImageDto)
-    images: EngagementImageDto[];
+  @ApiProperty({
+    description: 'Array of images with descriptions',
+    type: [EngagementImageDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EngagementImageDto)
+  images: EngagementImageDto[];
 
-    @ApiProperty({
-        description: 'Date string for the event details',
-        example: '2025-09-19',
-    })
-    @IsNotEmpty()
-    @IsString()
-    date: string;
+  @ApiProperty({
+    description: 'Date string for the event details',
+    example: '2025-09-19',
+  })
+  @IsNotEmpty()
+  @IsString()
+  date: string;
 
-    @ApiProperty({
-        description: 'Full details about the event (long description, agenda, etc.)',
-        example: 'Full details about the event (long description, agenda, etc.)',
-    })
-    @IsNotEmpty()
-    @IsString()
-    content: string;
+  @ApiProperty({
+    description:
+      'Full details about the event (long description, agenda, etc.)',
+    example: 'Full details about the event (long description, agenda, etc.)',
+  })
+  @IsNotEmpty()
+  @IsString()
+  content: string;
 
-    @ApiProperty({
-        description: 'Call to action information',
-        type: EngagementCtaDto,
-    })
-    @ValidateNested()
-    @Type(() => EngagementCtaDto)
-    cta: EngagementCtaDto;
+  @ApiPropertyOptional({
+    description: 'Call to action information',
+    type: EngagementCtaDto,
+  })
+  @ValidateNested()
+  @IsOptional()
+  @Type(() => EngagementCtaDto)
+  cta?: EngagementCtaDto;
 }

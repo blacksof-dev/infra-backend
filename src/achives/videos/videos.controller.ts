@@ -41,7 +41,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 @ApiTags('Videos Management')
 @Controller('archives/videos')
 export class VideosController {
-  constructor(private readonly videosService: VideosService) { }
+  constructor(private readonly videosService: VideosService) {}
 
   /**
    * Helper method to parse categoryIds from form data
@@ -49,7 +49,10 @@ export class VideosController {
    * @param isRequired - Whether categoryIds are required (for POST) or optional (for PATCH)
    * @returns Array of category IDs or null for optional empty values
    */
-  private parseCategoryIds(categoryIds: any, isRequired: boolean = true): string[] | null {
+  private parseCategoryIds(
+    categoryIds: any,
+    isRequired: boolean = true,
+  ): string[] | null {
     if (!categoryIds) {
       if (isRequired) {
         throw new Error('categoryIds is required');
@@ -58,7 +61,9 @@ export class VideosController {
     }
 
     if (Array.isArray(categoryIds)) {
-      return categoryIds.filter(id => typeof id === 'string' && id.trim().length > 0);
+      return categoryIds.filter(
+        (id) => typeof id === 'string' && id.trim().length > 0,
+      );
     }
 
     if (typeof categoryIds === 'string') {
@@ -75,15 +80,22 @@ export class VideosController {
         try {
           const parsed = JSON.parse(trimmed);
           if (Array.isArray(parsed)) {
-            return parsed.filter(id => typeof id === 'string' && id.trim().length > 0);
+            return parsed.filter(
+              (id) => typeof id === 'string' && id.trim().length > 0,
+            );
           }
         } catch (error) {
-          throw new Error(`Invalid JSON format for categoryIds: ${error.message}`);
+          throw new Error(
+            `Invalid JSON format for categoryIds: ${error.message}`,
+          );
         }
       }
 
       // Treat as comma-separated values
-      const result = trimmed.split(',').map(id => id.trim()).filter(id => id.length > 0);
+      const result = trimmed
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
 
       if (result.length === 0) {
         if (isRequired) {
@@ -95,7 +107,9 @@ export class VideosController {
       return result;
     }
 
-    throw new Error('categoryIds must be an array, JSON string, or comma-separated string');
+    throw new Error(
+      'categoryIds must be an array, JSON string, or comma-separated string',
+    );
   }
 
   /**
@@ -118,7 +132,8 @@ export class VideosController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new video',
-    description: 'Creates a new video with image upload. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Creates a new video with image upload. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiBody({
     description: 'Video data with image upload',
@@ -128,7 +143,8 @@ export class VideosController {
         image: {
           type: 'string',
           format: 'binary',
-          description: 'Video thumbnail image file (JPG, PNG, GIF, WebP - max 10MB)',
+          description:
+            'Video thumbnail image file (JPG, PNG, GIF, WebP - max 10MB)',
         },
         title: {
           type: 'string',
@@ -143,7 +159,8 @@ export class VideosController {
         description: {
           type: 'string',
           description: 'Description of the video',
-          example: 'A detailed discussion about high-speed rail infrastructure in India',
+          example:
+            'A detailed discussion about high-speed rail infrastructure in India',
         },
         link: {
           type: 'string',
@@ -184,10 +201,7 @@ export class VideosController {
     description: 'Forbidden - Insufficient permissions',
   })
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() body: any,
-    @UploadedFile() imageFile?: Multer.File,
-  ) {
+  create(@Body() body: any, @UploadedFile() imageFile?: Multer.File) {
     try {
       // Parse form data properly
       const createVideoDto: CreateVideoDto = {
@@ -200,7 +214,10 @@ export class VideosController {
         // Parse categoryIds if it's a string (JSON or comma-separated)
         categoryIds: this.parseCategoryIds(body.categoryIds, true) as string[], // Required for POST
         // Parse active as boolean if provided
-        active: body.active === undefined ? undefined : body.active === 'true' || body.active === true,
+        active:
+          body.active === undefined
+            ? undefined
+            : body.active === 'true' || body.active === true,
       };
 
       return this.videosService.create(createVideoDto, imageFile);
@@ -216,7 +233,8 @@ export class VideosController {
   @Get()
   @ApiOperation({
     summary: 'Get all videos',
-    description: 'Retrieves all videos. This endpoint is public and does not require authentication.',
+    description:
+      'Retrieves all videos. This endpoint is public and does not require authentication.',
   })
   @ApiQuery({
     name: 'activeOnly',
@@ -249,12 +267,36 @@ export class VideosController {
     description: 'All videos retrieved successfully',
   })
   findAll(
-    @Query('activeOnly') activeOnly?: boolean,
+    @Query('activeOnly') activeOnly?: any,
     @Query('categoryId') categoryId?: string,
-    @Query() paginationDto?: PaginationDto,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    return this.videosService.findAll(activeOnly === true, categoryId, page, limit);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+
+    // Default: true (active only)
+    // "true" -> true (active only)
+    // "false" -> false (inactive only)
+    // "all" -> undefined (both)
+    let isActiveOnly: boolean | undefined = true;
+
+    if (activeOnly === 'false' || activeOnly === false) {
+      isActiveOnly = false;
+    } else if (activeOnly === 'all') {
+      isActiveOnly = undefined;
+    } else if (activeOnly === 'true' || activeOnly === true) {
+      isActiveOnly = true;
+    } else if (activeOnly === undefined) {
+      isActiveOnly = true;
+    }
+
+    return this.videosService.findAll(
+      isActiveOnly,
+      categoryId,
+      pageNum,
+      limitNum,
+    );
   }
 
   /**
@@ -264,7 +306,8 @@ export class VideosController {
   @Get('categories/:categoryId')
   @ApiOperation({
     summary: 'Get videos by category',
-    description: 'Retrieves videos in a specific category. This endpoint is public and does not require authentication.',
+    description:
+      'Retrieves videos in a specific category. This endpoint is public and does not require authentication.',
   })
   @ApiParam({
     name: 'categoryId',
@@ -299,13 +342,32 @@ export class VideosController {
   })
   getVideosByCategory(
     @Param('categoryId') categoryId: string,
-    @Query('activeOnly') activeOnly?: boolean,
-    @Query() paginationDto?: PaginationDto,
+    @Query('activeOnly') activeOnly?: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    return this.videosService.getVideosByCategory(categoryId, activeOnly === true, page, limit);
-  }
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
 
+    let isActiveOnly: boolean | undefined = true;
+
+    if (activeOnly === 'false' || activeOnly === false) {
+      isActiveOnly = false;
+    } else if (activeOnly === 'all') {
+      isActiveOnly = undefined;
+    } else if (activeOnly === 'true' || activeOnly === true) {
+      isActiveOnly = true;
+    } else if (activeOnly === undefined) {
+      isActiveOnly = true;
+    }
+
+    return this.videosService.getVideosByCategory(
+      categoryId,
+      isActiveOnly,
+      pageNum,
+      limitNum,
+    );
+  }
 
   /**
    * Update a video
@@ -318,55 +380,66 @@ export class VideosController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Update a video',
-    description: 'Partially updates a video with new data and optional image upload. Only provided fields will be updated. Empty values are ignored. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Partially updates a video with new data and optional image upload. Only provided fields will be updated. Empty values are ignored. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiParam({
     name: 'id',
     description: 'The ID of the video to update',
   })
   @ApiBody({
-    description: 'Video data with optional image upload. Only provide fields you want to update. Empty values will be ignored.',
+    description:
+      'Video data with optional image upload. Only provide fields you want to update. Empty values will be ignored.',
     schema: {
       type: 'object',
       properties: {
         image: {
           type: 'string',
           format: 'binary',
-          description: 'Video thumbnail image file (JPG, PNG, GIF, WebP - max 10MB) (optional)',
+          description:
+            'Video thumbnail image file (JPG, PNG, GIF, WebP - max 10MB) (optional)',
         },
         title: {
           type: 'string',
-          description: 'Title of the video (optional - leave empty to not update)',
+          description:
+            'Title of the video (optional - leave empty to not update)',
           example: 'HSR will be the next growth multiplier',
         },
         subtitle: {
           type: 'string',
-          description: 'Subtitle of the video (optional - leave empty to not update)',
+          description:
+            'Subtitle of the video (optional - leave empty to not update)',
           example: 'The Infravision Conversation',
         },
         description: {
           type: 'string',
-          description: 'Description of the video (optional - leave empty to not update)',
-          example: 'A detailed discussion about high-speed rail infrastructure in India',
+          description:
+            'Description of the video (optional - leave empty to not update)',
+          example:
+            'A detailed discussion about high-speed rail infrastructure in India',
         },
         link: {
           type: 'string',
-          description: 'URL to the video (optional - leave empty to not update)',
+          description:
+            'URL to the video (optional - leave empty to not update)',
           example: 'https://www.youtube.com/embed/Sr17ZN7FLA4',
         },
         date: {
           type: 'string',
-          description: 'Date when the video was published (optional - leave empty to not update)',
+          description:
+            'Date when the video was published (optional - leave empty to not update)',
           example: '2023-08-27',
         },
         categoryIds: {
           type: 'string',
-          description: 'Category IDs as JSON string or comma-separated values (optional - leave empty to not update)',
+          description:
+            'Category IDs as JSON string or comma-separated values (optional - leave empty to not update)',
           example: '68d179f266a336a11192ef1c',
         },
         active: {
           type: 'boolean',
-          description: 'Whether the video is active (optional - leave empty to not update)',
+          description:
+            'Whether the video is active (optional - leave empty to not update)',
           example: true,
         },
       },
@@ -426,7 +499,10 @@ export class VideosController {
 
       // Parse categoryIds if provided and not empty
       if (body.categoryIds !== undefined) {
-        const parsedCategoryIds = this.parseCategoryIds(body.categoryIds, false); // Not required for PATCH
+        const parsedCategoryIds = this.parseCategoryIds(
+          body.categoryIds,
+          false,
+        ); // Not required for PATCH
         if (parsedCategoryIds !== null) {
           updateVideoDto.categoryIds = parsedCategoryIds;
         }
@@ -453,7 +529,8 @@ export class VideosController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Toggle video active status',
-    description: 'Toggles the active status of a video. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Toggles the active status of a video. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiParam({
     name: 'id',
@@ -486,7 +563,8 @@ export class VideosController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a video',
-    description: 'Permanently deletes a video. This action cannot be undone. This endpoint requires ADMIN or SUPERADMIN authentication.',
+    description:
+      'Permanently deletes a video. This action cannot be undone. This endpoint requires ADMIN or SUPERADMIN authentication.',
   })
   @ApiParam({
     name: 'id',
@@ -508,5 +586,4 @@ export class VideosController {
   remove(@Param('id') id: string) {
     return this.videosService.remove(id);
   }
-
 }

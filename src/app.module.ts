@@ -31,6 +31,7 @@ import { MemberModule } from './members/member.module';
 import { GalleryModule as AdvancedGalleryModule } from './gallery/gallery.module';
 import { InfraKathaModule } from './infrakatha/infrakatha.module';
 import { InfraPanditModule } from './infrapandit/infrapandit.module';
+import { EntryPopupModule } from './entry-popup/entry-popup.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { InfraPanditModule } from './infrapandit/infrapandit.module';
     FileUploadModule,
     InfraKathaModule,
     InfraPanditModule,
+    EntryPopupModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeederService],
