@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class UpdateBlogDto {
   @ApiProperty({
@@ -20,6 +28,25 @@ export class UpdateBlogDto {
   @IsOptional()
   subtitle?: string;
 
+  @ApiProperty({
+    description: 'Author of the blog',
+    example: 'John Doe',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @ApiProperty({
+    description: 'Estimated reading time in minutes',
+    example: 6,
+    required: false,
+    minimum: 1,
+  })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  readingTime?: number;
 
   @ApiProperty({
     description: 'The publication date of the blog',
@@ -31,13 +58,12 @@ export class UpdateBlogDto {
   publishedDate?: string;
 
   @ApiProperty({
-    description: 'The markdown content of the blog',
-    example: '# Introduction\n\nThis is a blog post about sustainable infrastructure...',
+    description: 'The EditorJS JSON content of the blog',
+    example: { time: 1625061654123, blocks: [], version: '2.21.0' },
     required: false,
   })
-  @IsString()
   @IsOptional()
-  content?: string;
+  content?: any;
 
   @ApiProperty({
     description: 'Whether the blog is active',

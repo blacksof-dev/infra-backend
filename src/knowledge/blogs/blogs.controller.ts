@@ -28,6 +28,7 @@ import type { Multer } from 'multer';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { BlogQueryDto } from './dto/blog-query.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -36,7 +37,7 @@ import { Roles, UserRole } from '../../auth/decorators/roles.decorator';
 @ApiTags('Knowledge')
 @Controller('knowledge/blogs')
 export class BlogsController {
-  constructor(private readonly service: BlogsService) { }
+  constructor(private readonly service: BlogsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,7 +45,8 @@ export class BlogsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a new blog',
-    description: 'Creates a new blog with file uploads. All fields except sectorIds are optional. Requires admin privileges.',
+    description:
+      'Creates a new blog with file uploads. All fields except sectorIds are optional. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -69,28 +71,40 @@ export class BlogsController {
           type: 'string',
           description: 'The subtitle of the blog (optional)',
         },
+        author: {
+          type: 'string',
+          description: 'Author of the blog (required)',
+        },
+        readingTime: {
+          type: 'number',
+          description: 'Estimated reading time in minutes (required)',
+          example: 6,
+        },
         publishedDate: {
           type: 'string',
-          description: 'The publication date of the blog in YYYY-MM-DD format (optional)',
+          description:
+            'The publication date of the blog in YYYY-MM-DD format (optional)',
         },
         content: {
-          type: 'string',
-          description: 'The markdown content of the blog (optional)',
+          type: 'object',
+          description: 'The EditorJS JSON content of the blog (optional)',
         },
         active: {
           type: 'boolean',
-          description: 'Whether the blog is active (optional, defaults to true)',
+          description:
+            'Whether the blog is active (optional, defaults to true)',
         },
         sectorIds: {
           type: 'array',
           items: {
             type: 'string',
           },
-          description: 'Array of sector IDs associated with this blog (required)',
+          description:
+            'Array of sector IDs associated with this blog (required)',
         },
       },
       // All fields are optional
-      required: ['sectorIds'],
+      required: ['author', 'readingTime', 'sectorIds'],
     },
   })
   @ApiResponse({
@@ -104,20 +118,27 @@ export class BlogsController {
     FileFieldsInterceptor([
       { name: 'coverImageFile', maxCount: 1 },
       { name: 'docFile', maxCount: 1 },
-    ])
+    ]),
   )
   create(
     @Body() body: any,
     @UploadedFiles()
     files: {
-      coverImageFile?: Multer.File[],
-      docFile?: Multer.File[],
+      coverImageFile?: Multer.File[];
+      docFile?: Multer.File[];
     },
   ) {
+    const readingTime =
+      body.readingTime !== undefined && body.readingTime !== null
+        ? Number(body.readingTime)
+        : undefined;
+
     // Parse form data properly
     const createBlogDto: CreateBlogDto = {
       title: body.title,
       subtitle: body.subtitle,
+      author: body.author,
+      readingTime: readingTime as number,
       publishedDate: body.publishedDate,
       content: body.content,
       // Parse active as boolean
@@ -127,7 +148,7 @@ export class BlogsController {
         ? body.sectorIds
         : body.sectorIds?.includes(',')
           ? body.sectorIds.split(',')
-          : [body.sectorIds]
+          : [body.sectorIds],
     };
 
     return this.service.create(createBlogDto, files);
@@ -136,7 +157,8 @@ export class BlogsController {
   @Get('years')
   @ApiOperation({
     summary: 'Get years with blog publications',
-    description: 'Retrieves an array of years in which blogs were published, sorted in descending order. This endpoint is public.',
+    description:
+      'Retrieves an array of years in which blogs were published, sorted in descending order. This endpoint is public.',
   })
   @ApiQuery({
     name: 'activeOnly',
@@ -161,55 +183,43 @@ export class BlogsController {
     summary: 'Get all blogs',
     description: 'Retrieves a list of all blogs. This endpoint is public.',
   })
-  @ApiQuery({
-    name: 'activeOnly',
-    required: false,
-    type: Boolean,
-    description: 'If true, returns only active blogs',
-  })
-  @ApiQuery({
-    name: 'sectorId',
-    required: false,
-    type: String,
-    description: 'Filter blogs by sector ID',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (starts from 1)',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
-    example: 10,
-  })
+  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
+  @ApiQuery({ name: 'sectorId', required: false, type: String })
+  @ApiQuery({ name: 'categoryId', required: false, type: String })
+  @ApiQuery({ name: 'year', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
     description: 'List of blogs retrieved successfully.',
   })
-  findAll(
-    @Query('activeOnly') activeOnly?: boolean,
-    @Query('sectorId') sectorId?: string,
-    @Query() paginationDto?: PaginationDto,
-  ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
+  findAll(@Query() query: BlogQueryDto) {
+    const {
+      page = 1,
+      limit = 10,
+      activeOnly,
+      sectorId,
+      categoryId,
+      year,
+    } = query;
 
-    // If sectorId is provided, use getBlogsBySector instead of findAll
-    if (sectorId) {
-      return this.service.getBlogsBySector(sectorId, activeOnly === true, page, limit);
-    }
+    // Use either sectorId or categoryId (if provided)
+    const effectiveSectorId = sectorId || categoryId;
 
-    return this.service.findAll(activeOnly === true, page, limit);
+    return this.service.findAll({
+      activeOnly: activeOnly === true,
+      page,
+      limit,
+      sectorId: effectiveSectorId,
+      year,
+    });
   }
 
   @Get('by-sector/:sectorId')
   @ApiOperation({
     summary: 'Get blogs by sector',
-    description: 'Retrieves blogs filtered by sector ID. This endpoint is public.',
+    description:
+      'Retrieves blogs filtered by sector ID. This endpoint is public.',
   })
   @ApiParam({
     name: 'sectorId',
@@ -220,6 +230,12 @@ export class BlogsController {
     required: false,
     type: Boolean,
     description: 'If true, returns only active blogs',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    description: 'Filter blogs by publication year',
   })
   @ApiQuery({
     name: 'page',
@@ -242,17 +258,23 @@ export class BlogsController {
   @ApiResponse({ status: 404, description: 'Sector not found.' })
   getBlogsBySector(
     @Param('sectorId') sectorId: string,
-    @Query('activeOnly') activeOnly?: boolean,
-    @Query() paginationDto?: PaginationDto,
+    @Query() query: BlogQueryDto,
   ) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    return this.service.getBlogsBySector(sectorId, activeOnly === true, page, limit);
+    const { page = 1, limit = 10, activeOnly, year } = query;
+    return this.service.findAll({
+      activeOnly: activeOnly === true,
+      page,
+      limit,
+      sectorId,
+      year,
+    });
   }
 
   @Get(':id')
   @ApiOperation({
     summary: 'Get a blog by ID',
-    description: 'Retrieves a specific blog by its ID. This endpoint is public.',
+    description:
+      'Retrieves a specific blog by its ID. This endpoint is public.',
   })
   @ApiParam({
     name: 'id',
@@ -273,7 +295,8 @@ export class BlogsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a blog',
-    description: 'Updates a specific blog by its ID. All fields are optional. Supports file uploads. Requires admin privileges.',
+    description:
+      'Updates a specific blog by its ID. All fields are optional. Supports file uploads. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -302,24 +325,36 @@ export class BlogsController {
           type: 'string',
           description: 'The subtitle of the blog (optional)',
         },
+        author: {
+          type: 'string',
+          description: 'Author of the blog (optional)',
+        },
+        readingTime: {
+          type: 'number',
+          description: 'Estimated reading time in minutes (optional)',
+          example: 6,
+        },
         publishedDate: {
           type: 'string',
-          description: 'The publication date of the blog in YYYY-MM-DD format (optional)',
+          description:
+            'The publication date of the blog in YYYY-MM-DD format (optional)',
         },
         content: {
-          type: 'string',
-          description: 'The markdown content of the blog (optional)',
+          type: 'object',
+          description: 'The EditorJS JSON content of the blog (optional)',
         },
         active: {
           type: 'boolean',
-          description: 'Whether the blog is active (optional, defaults to true)',
+          description:
+            'Whether the blog is active (optional, defaults to true)',
         },
         sectorIds: {
           type: 'array',
           items: {
             type: 'string',
           },
-          description: 'Array of sector IDs associated with this blog (required)',
+          description:
+            'Array of sector IDs associated with this blog (required)',
         },
       },
       required: ['sectorIds'],
@@ -337,15 +372,15 @@ export class BlogsController {
     FileFieldsInterceptor([
       { name: 'coverImageFile', maxCount: 1 },
       { name: 'docFile', maxCount: 1 },
-    ])
+    ]),
   )
   update(
     @Param('id') id: string,
     @Body() body: any,
     @UploadedFiles()
     files?: {
-      coverImageFile?: Multer.File[],
-      docFile?: Multer.File[],
+      coverImageFile?: Multer.File[];
+      docFile?: Multer.File[];
     },
   ) {
     // Parse form data properly
@@ -353,7 +388,15 @@ export class BlogsController {
 
     if (body.title !== undefined) updateBlogDto.title = body.title;
     if (body.subtitle !== undefined) updateBlogDto.subtitle = body.subtitle;
-    if (body.publishedDate !== undefined) updateBlogDto.publishedDate = body.publishedDate;
+    if (body.author !== undefined) updateBlogDto.author = body.author;
+    if (body.readingTime !== undefined) {
+      const readingTime = Number(body.readingTime);
+      if (!Number.isNaN(readingTime)) {
+        updateBlogDto.readingTime = readingTime;
+      }
+    }
+    if (body.publishedDate !== undefined)
+      updateBlogDto.publishedDate = body.publishedDate;
     if (body.content !== undefined) updateBlogDto.content = body.content;
 
     // Parse active as boolean if provided
@@ -376,7 +419,9 @@ export class BlogsController {
       }
 
       // Filter out empty strings
-      const filteredSectorIds = sectorIds.filter((id: string) => id && id.trim() !== '');
+      const filteredSectorIds = sectorIds.filter(
+        (id: string) => id && id.trim() !== '',
+      );
 
       // Only include sectorIds in the update if there are valid ones after filtering
       if (filteredSectorIds.length > 0) {
@@ -385,7 +430,13 @@ export class BlogsController {
       // If all provided sectorIds were empty/invalid, skip updating this field
     }
 
-    return this.service.update(id, updateBlogDto, files && (files.coverImageFile?.length || files.docFile?.length) ? files : undefined);
+    return this.service.update(
+      id,
+      updateBlogDto,
+      files && (files.coverImageFile?.length || files.docFile?.length)
+        ? files
+        : undefined,
+    );
   }
 
   @Patch(':id/files')
@@ -394,7 +445,8 @@ export class BlogsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update blog files',
-    description: 'Updates the files (cover image and/or document) of a specific blog. Requires admin privileges.',
+    description:
+      'Updates the files (cover image and/or document) of a specific blog. Requires admin privileges.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiParam({
@@ -430,14 +482,14 @@ export class BlogsController {
     FileFieldsInterceptor([
       { name: 'coverImageFile', maxCount: 1 },
       { name: 'docFile', maxCount: 1 },
-    ])
+    ]),
   )
   updateFiles(
     @Param('id') id: string,
     @UploadedFiles()
     files: {
-      coverImageFile?: Multer.File[],
-      docFile?: Multer.File[],
+      coverImageFile?: Multer.File[];
+      docFile?: Multer.File[];
     },
   ) {
     return this.service.updateFiles(id, files);
@@ -449,7 +501,8 @@ export class BlogsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Toggle blog status',
-    description: 'Toggles the active status of a specific blog. Requires admin privileges.',
+    description:
+      'Toggles the active status of a specific blog. Requires admin privileges.',
   })
   @ApiParam({
     name: 'id',
@@ -473,7 +526,8 @@ export class BlogsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a blog',
-    description: 'Deletes a specific blog by its ID. Requires admin privileges.',
+    description:
+      'Deletes a specific blog by its ID. Requires admin privileges.',
   })
   @ApiParam({
     name: 'id',

@@ -205,10 +205,13 @@ model Blog {
   id              String     @id @default(auto()) @map("_id") @db.ObjectId
   title           String?
   subtitle        String?
+  slug            String     @unique
+  author          String     @default("")
+  readingTime     Int        @default(0)
   publishedDate   DateTime?
   docFile         String?    // URL to the PDF file
   coverImage      String?    // URL to the cover image
-  content         String?    // Markdown content
+  content         Json?      // EditorJS JSON content
   active          Boolean    @default(true)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt

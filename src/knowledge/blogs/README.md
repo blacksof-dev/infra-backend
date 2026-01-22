@@ -19,8 +19,8 @@ The Blog model includes the following fields:
 - `id`: Unique identifier (MongoDB ObjectId)
 - `title`: Main title of the blog
 - `subtitle`: Optional subtitle or tagline
-- `authorName`: Name of the author
-- `authorDesignation`: Job title or designation of the author
+- `author`: Name of the author
+- `readingTime`: Estimated reading time in minutes
 - `publishedDate`: Date when the blog was published
 - `docFile`: URL to the associated PDF document
 - `coverImage`: URL to the blog's cover image
@@ -70,8 +70,8 @@ To create a new blog, send a `multipart/form-data` POST request to `/knowledge/b
 - `docFile`: PDF document file (required)
 - `title`: Blog title (required)
 - `subtitle`: Blog subtitle (optional)
-- `authorName`: Author name (required)
-- `authorDesignation`: Author designation (required)
+- `author`: Author name (required)
+- `readingTime`: Estimated reading time in minutes (required)
 - `publishedDate`: Publication date in YYYY-MM-DD format (required)
 - `content`: Markdown content (required)
 - `sectorIds`: Array of sector IDs or comma-separated string of sector IDs (required)
