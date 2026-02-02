@@ -53,7 +53,7 @@ import { EntryPopupModule } from './entry-popup/entry-popup.module';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client/dist'),
       serveRoot: '/admin',
-      exclude: ['/api*', '/docs*'],
+      exclude: ['/api*wildcard', '/docs*'],
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'assets'),
@@ -62,7 +62,7 @@ import { EntryPopupModule } from './entry-popup/entry-popup.module';
         index: false,
         maxAge: '1d',
       },
-      exclude: ['/api*', '/docs*', '/admin*'],
+      exclude: ['/api*wildcard', '/docs*', '/admin*'],
     }),
     TrusteesModule,
     EngagementsModule,
