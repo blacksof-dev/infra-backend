@@ -41,7 +41,18 @@ export class InfraPanditAwardsService {
     return (this.prisma as ExtendedPrismaService).infraPanditAward.create({
       data: {
         title: 'Connecting academic excellence to national progress',
-        content: 'The InfraPandit Awards honour and reward...',
+        content: {
+          time: Date.now(),
+          blocks: [
+            {
+              type: 'paragraph',
+              data: {
+                text: 'The InfraPandit Awards honour and reward...',
+              },
+            },
+          ],
+          version: '2.28.2',
+        },
         active: true,
       },
     });
@@ -52,7 +63,18 @@ export class InfraPanditAwardsService {
       {
         data: {
           ctaText: 'Eligibility and process',
-          content: '# Eligibility criteria...',
+          content: {
+            time: Date.now(),
+            blocks: [
+              {
+                type: 'paragraph',
+                data: {
+                  text: 'Eligibility criteria...',
+                },
+              },
+            ],
+            version: '2.28.2',
+          },
           active: true,
         },
       },
@@ -93,6 +115,11 @@ export class InfraPanditAwardsService {
       }
     }
 
+    if (dto.content !== undefined) {
+      data.content =
+        typeof dto.content === 'string' ? JSON.parse(dto.content) : dto.content;
+    }
+
     return (this.prisma as ExtendedPrismaService).infraPanditAward.update({
       where: { id: existing.id },
       data,
@@ -108,7 +135,10 @@ export class InfraPanditAwardsService {
     const data: any = {};
     if (dto.ctaText !== undefined) data.ctaText = dto.ctaText;
     if (dto.active !== undefined) data.active = dto.active;
-    if (dto.content !== undefined) data.content = dto.content;
+    if (dto.content !== undefined) {
+      data.content =
+        typeof dto.content === 'string' ? JSON.parse(dto.content) : dto.content;
+    }
 
     return (this.prisma as ExtendedPrismaService).infraPanditEligibility.update(
       {

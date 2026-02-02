@@ -25,10 +25,9 @@ export class UpdateInfraPanditAwardDto {
   title?: string;
 
   @ApiProperty({ required: false })
-  @IsString()
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
-  content?: string;
+  content?: any;
 
   @ApiProperty({ type: 'string', format: 'binary', required: false })
   @IsOptional()
@@ -51,9 +50,8 @@ export class UpdateEligibilityDto {
   active?: boolean;
 
   @ApiProperty({ required: false })
-  @IsString()
   @IsOptional()
-  content?: string;
+  content?: any;
 }
 
 export class UpdateApplicationFormDto {
