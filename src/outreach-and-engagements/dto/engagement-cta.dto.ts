@@ -16,6 +16,5 @@ export class EngagementCtaDto {
   })
   @IsNotEmpty()
   @IsString()
-  @IsUrl()
   link: string;
 }
