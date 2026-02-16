@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLatestUpdateDto } from './dto/create-latest-update.dto';
 import { UpdateLatestUpdateDto } from './dto/update-latest-update.dto';
@@ -7,7 +12,7 @@ import { UpdateLatestUpdateDto } from './dto/update-latest-update.dto';
 export class LatestUpdatesService {
   private readonly logger = new Logger(LatestUpdatesService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new latest update
@@ -144,11 +149,18 @@ export class LatestUpdatesService {
         },
       });
 
+      // Fetch the latest media coverage (In the News)
+      const latestMediaCoverage = await this.prisma.mediaCoverage.findFirst({
+        where,
+        orderBy: { date: 'desc' },
+      });
+
       return {
         newsletter: latestNewsletter,
         blog: latestBlog,
         researchPaper: latestResearchPaper,
         video: latestVideo,
+        mediaCoverage: latestMediaCoverage,
         lastUpdated: new Date().toISOString(),
       };
     } catch (error) {

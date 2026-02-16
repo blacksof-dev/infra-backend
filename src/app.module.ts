@@ -32,6 +32,7 @@ import { GalleryModule as AdvancedGalleryModule } from './gallery/gallery.module
 import { InfraKathaModule } from './infrakatha/infrakatha.module';
 import { InfraPanditModule } from './infrapandit/infrapandit.module';
 import { EntryPopupModule } from './entry-popup/entry-popup.module';
+import { HighlightsModule } from './highlights/highlights.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { EntryPopupModule } from './entry-popup/entry-popup.module';
     InfraKathaModule,
     InfraPanditModule,
     EntryPopupModule,
+    HighlightsModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeederService],

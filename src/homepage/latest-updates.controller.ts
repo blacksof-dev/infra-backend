@@ -33,7 +33,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('homepage/latest-updates')
 export class LatestUpdatesController {
-  constructor(private readonly latestUpdatesService: LatestUpdatesService) { }
+  constructor(private readonly latestUpdatesService: LatestUpdatesService) {}
   /**
    * Get latest content from multiple sources
    * This endpoint is public and returns the latest newsletter, blog, research paper, and video
@@ -41,7 +41,8 @@ export class LatestUpdatesController {
   @Get('')
   @ApiOperation({
     summary: 'Get latest content from multiple sources',
-    description: 'Retrieves the most recent newsletter, blog, research paper, and video. This endpoint is public and does not require authentication.',
+    description:
+      'Retrieves the most recent newsletter, blog, research paper, and video. This endpoint is public and does not require authentication.',
   })
   @ApiQuery({
     name: 'activeOnly',
@@ -76,7 +77,8 @@ export class LatestUpdatesController {
           publishedDate: '2023-06-15T00:00:00.000Z',
           docFile: '/assets/pdf/blogs/sustainable-infrastructure.pdf',
           coverImage: '/assets/images/blogs/sustainable-infrastructure.jpg',
-          content: '# The Future of Sustainable Infrastructure\n\nSustainable infrastructure is...',
+          content:
+            '# The Future of Sustainable Infrastructure\n\nSustainable infrastructure is...',
           active: true,
           createdAt: '2023-06-10T12:00:00.000Z',
           updatedAt: '2023-06-10T12:00:00.000Z',
@@ -89,14 +91,15 @@ export class LatestUpdatesController {
               active: true,
               createdAt: '2023-01-01T00:00:00.000Z',
               updatedAt: '2023-01-01T00:00:00.000Z',
-            }
+            },
           ],
         },
         researchPaper: {
           id: '60d21b4667d0d8992e610c88',
           image: '/assets/images/research-papers/urban-planning.jpg',
           title: 'Urban Planning for the 21st Century',
-          description: 'A comprehensive study on modern urban planning techniques',
+          description:
+            'A comprehensive study on modern urban planning techniques',
           link: '/assets/pdf/research-papers/urban-planning.pdf',
           date: '2023-05-20T00:00:00.000Z',
           active: true,
@@ -111,7 +114,7 @@ export class LatestUpdatesController {
               active: true,
               createdAt: '2023-01-01T00:00:00.000Z',
               updatedAt: '2023-01-01T00:00:00.000Z',
-            }
+            },
           ],
         },
         video: {
@@ -119,7 +122,8 @@ export class LatestUpdatesController {
           image: '/assets/images/videos/infrastructure-webinar.jpg',
           title: 'Infrastructure Development Webinar',
           subtitle: 'Expert Panel Discussion',
-          description: 'A panel of experts discusses the future of infrastructure development',
+          description:
+            'A panel of experts discusses the future of infrastructure development',
           link: 'https://www.youtube.com/watch?v=example',
           date: '2023-06-05T00:00:00.000Z',
           active: true,
@@ -134,8 +138,19 @@ export class LatestUpdatesController {
               active: true,
               createdAt: '2023-01-01T00:00:00.000Z',
               updatedAt: '2023-01-01T00:00:00.000Z',
-            }
+            },
           ],
+        },
+        mediaCoverage: {
+          id: '60d21b4667d0d8992e610c92',
+          image: '/assets/images/media/newspaper-clipping.jpg',
+          title: 'Infrastructure Boom in Rural India',
+          date: '2023-06-18',
+          author: 'John Doe',
+          link: 'https://news.example.com/article',
+          active: true,
+          createdAt: '2023-06-18T10:00:00.000Z',
+          updatedAt: '2023-06-18T10:00:00.000Z',
         },
         lastUpdated: '2023-06-20T12:00:00.000Z',
       },
@@ -144,6 +159,4 @@ export class LatestUpdatesController {
   getLatestContent(@Query('activeOnly') activeOnly?: boolean) {
     return this.latestUpdatesService.getLatestContent(activeOnly !== false);
   }
-
-
 }

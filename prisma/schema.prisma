@@ -541,3 +541,18 @@ model EntryPopup {
 
   @@map("entry_popups")
 }
+
+model Advocacy {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  image     String
+  label     String
+  title     String
+  ctaText   String
+  ctaLink   String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("advocacy")
+}
+

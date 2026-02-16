@@ -15,6 +15,17 @@ async function bootstrap() {
     }),
   );
 
+  // Enable CORS for all Main domain
+  // const allowedOrigins =
+  //   process.env.NODE_ENV === 'production'
+  //     ? ['https://theinfravisionfoundation.org', 'https://www.theinfravisionfoundation.org']
+  //     : ['http://localhost:3000'];
+
+  // app.enableCors({
+  //   origin: allowedOrigins,
+  //   credentials: true,
+  // });
+
   // Enable CORS for all origins
   app.enableCors({
     origin: true,
@@ -30,7 +41,10 @@ async function bootstrap() {
     .addTag('Admin Management', 'CRUD operations for admin users')
     .addTag('Social Profiles', 'CRUD for social media profiles')
     .addTag('Organisation', 'Organisation details (public read, admin write)')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -40,10 +54,12 @@ async function bootstrap() {
     },
   });
 
-  const port = 4000 
-   await app.listen(port);
+  const port = 4000;
+  await app.listen(port);
   console.log(`🚀 Admin Panel Backend running on port ${port}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📖 Swagger documentation available at http://localhost:${port}/docs`);
+  console.log(
+    `📖 Swagger documentation available at http://localhost:${port}/docs`,
+  );
 }
 bootstrap();

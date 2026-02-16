@@ -5,6 +5,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { LatestUpdatesController } from './latest-updates.controller';
 import { LatestUpdatesService } from './latest-updates.service';
 import { AdvocacyController } from './advocacy.controller';
+import { AdvocacyService } from './advocacy.service';
 import { ContactController } from './contact.controller';
 import { ContactService } from './contact.service';
 import { LeadsController } from './leads.controller';
@@ -13,29 +14,27 @@ import { FileUploadModule } from '../common/file-upload/file-upload.module';
 import { AssociationsModule } from './associations/associations.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    FileUploadModule,
-    AssociationsModule
-  ],
+  imports: [PrismaModule, FileUploadModule, AssociationsModule],
   controllers: [
     HomepageController,
     LatestUpdatesController,
     AdvocacyController,
-    LeadsController
+    LeadsController,
   ],
   providers: [
     HomepageService,
     LatestUpdatesService,
+    AdvocacyService,
     ContactService,
-    LeadsService
+    LeadsService,
   ],
   exports: [
     HomepageService,
     LatestUpdatesService,
+    AdvocacyService,
     ContactService,
     LeadsService,
-    AssociationsModule
+    AssociationsModule,
   ],
 })
-export class HomepageModule { }
+export class HomepageModule {}
