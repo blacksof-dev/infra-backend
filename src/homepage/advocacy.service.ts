@@ -38,10 +38,7 @@ export class AdvocacyService {
       throw new BadRequestException('Image file is required');
     }
 
-    const imageUrl = await this.fileUploadService.uploadImage(
-      imageFile,
-      'advocacy',
-    );
+    const imageUrl = await this.fileUploadService.uploadImage(imageFile);
 
     return (this.prisma as any).advocacy.create({
       data: {
@@ -102,10 +99,7 @@ export class AdvocacyService {
         await this.fileUploadService.deleteFile(existing.image);
       }
       // Upload new image
-      imageUrl = await this.fileUploadService.uploadImage(
-        imageFile,
-        'advocacy',
-      );
+      imageUrl = await this.fileUploadService.uploadImage(imageFile);
     }
 
     return (this.prisma as any).advocacy.update({
