@@ -134,20 +134,22 @@ export class ResearchPapersService {
    * @param limit - Number of items per page
    * @returns Array of all research papers with pagination
    */
-  async findAll(activeOnly = false, sectorId?: string, page = 1, limit = 10) {
+  async findAll(activeOnly = true, sectorId?: string, page = 1, limit = 10) {
     const where: any = {};
 
     // Filter by active status if requested
+
     if (activeOnly) {
       where.active = true;
+    } else {
+      where.active = false;
     }
 
     // Filter by sector if provided
     if (sectorId) {
-      where.sectors = {
-        some: {
-          id: sectorId,
-        },
+      console.log(sectorId);
+      where.sectorIds = {
+        has: sectorId,
       };
     }
 
@@ -167,9 +169,9 @@ export class ResearchPapersService {
     ).researchPaper.findMany({
       where,
       orderBy: { date: 'desc' },
-      include: {
-        sectors: true, // Include related sectors
-      },
+      // include: {
+      //   sectors: true, // Include related sectors
+      // },
       skip,
       take: limit,
     });

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   Res,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { NewsletterService } from './newsletter_subscription.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -28,7 +29,11 @@ import {
   ApiBadRequestResponse,
   ApiExtraModels,
   getSchemaPath,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles, UserRole } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('Newsletter Subscription')
 @Controller('newsletter-subscription')
@@ -39,7 +44,8 @@ export class NewsletterSubscriptionController {
   @Post('subscribe')
   @ApiOperation({
     summary: 'Subscribe to the newsletter',
-    description: 'Creates a new newsletter subscription for the provided email address.',
+    description:
+      'Creates a new newsletter subscription for the provided email address.',
   })
   @ApiBody({
     type: CreateSubscriptionDto,
@@ -82,9 +88,13 @@ export class NewsletterSubscriptionController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get all newsletter subscriptions (paginated)',
-    description: 'Returns a paginated list of newsletter subscriptions. Supports search and status filter.',
+    description:
+      'Returns a paginated list of newsletter subscriptions. Supports search and status filter.',
   })
   @ApiQuery({
     name: 'page',
@@ -139,9 +149,13 @@ export class NewsletterSubscriptionController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get a single newsletter subscription by ID',
-    description: 'Returns the details of a newsletter subscription by its unique ID.',
+    description:
+      'Returns the details of a newsletter subscription by its unique ID.',
   })
   @ApiParam({
     name: 'id',
@@ -177,6 +191,9 @@ export class NewsletterSubscriptionController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a newsletter subscription by ID',
     description: 'Deletes a newsletter subscription by its unique ID.',
@@ -206,9 +223,13 @@ export class NewsletterSubscriptionController {
   }
 
   @Patch(':id/unsubscribe')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Unsubscribe a newsletter subscription by ID',
-    description: 'Marks a newsletter subscription as unsubscribed by its unique ID.',
+    description:
+      'Marks a newsletter subscription as unsubscribed by its unique ID.',
   })
   @ApiParam({
     name: 'id',
@@ -244,6 +265,9 @@ export class NewsletterSubscriptionController {
   }
 
   @Get('export/csv')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Export newsletter subscriptions as CSV',
     description: 'Exports all newsletter subscriptions as a CSV file.',
@@ -253,13 +277,17 @@ export class NewsletterSubscriptionController {
     schema: {
       type: 'string',
       format: 'binary',
-      example: 'id,email,isActive,subscribedAt,unsubscribedAt,source\nckz1q2w3e4r5t6y7u8i9o0p,user@example.com,true,2024-06-01T12:34:56.789Z,,homepage\n',
+      example:
+        'id,email,isActive,subscribedAt,unsubscribedAt,source\nckz1q2w3e4r5t6y7u8i9o0p,user@example.com,true,2024-06-01T12:34:56.789Z,,homepage\n',
     },
   })
   async exportToCsv(@Res() res: Response) {
     const csv = await this.newsletterService.exportToCsv();
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="newsletter_subscriptions.csv"');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="newsletter_subscriptions.csv"',
+    );
     res.send(csv);
   }
 }
