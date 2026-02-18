@@ -54,7 +54,7 @@ async function bootstrap() {
     },
   });
 
-  const port = 4000;
+  const port = process.env.PORT || 4000;
   await app.listen(port);
   console.log(`🚀 Admin Panel Backend running on port ${port}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
