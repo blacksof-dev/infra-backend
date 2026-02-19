@@ -74,7 +74,6 @@ export class ResearchPapersService {
             .toLowerCase()
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-]/g, '')
-            .substring(0, 30) // Shorter title to accommodate hash
         : `research-${timestamp}`; // Default if no title provided
 
       // Upload files with unique filenames
@@ -85,7 +84,7 @@ export class ResearchPapersService {
 
       const pdfUrl = await this.fileUploadService.uploadPdf(
         pdfFile,
-        `research-paper-pdf-${sanitizedTitle}-${timestamp}-${pdfHash}`,
+        `${sanitizedTitle}-${timestamp}`,
       );
 
       // Parse date string to Date object if provided, otherwise use current date
@@ -168,7 +167,7 @@ export class ResearchPapersService {
       this.prisma as ExtendedPrismaService
     ).researchPaper.findMany({
       where,
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       // include: {
       //   sectors: true, // Include related sectors
       // },
@@ -288,6 +287,11 @@ export class ResearchPapersService {
                 .substring(0, 30)
             : `research-${id}`;
 
+          // Delete old image if it exists
+          if (existingPaper.image) {
+            await this.fileUploadService.deleteFile(existingPaper.image);
+          }
+
           // Upload image file
           const imageUrl = await this.fileUploadService.uploadImage(
             imageFile,
@@ -304,7 +308,6 @@ export class ResearchPapersService {
 
           // Generate unique filename with timestamp and hash
           const timestamp = Date.now();
-          const pdfHash = Math.random().toString(36).substring(2, 10);
 
           // Use existing title or ID for filename
           const baseName = existingPaper.title
@@ -312,13 +315,17 @@ export class ResearchPapersService {
                 .toLowerCase()
                 .replace(/\s+/g, '-')
                 .replace(/[^a-z0-9-]/g, '')
-                .substring(0, 30)
             : `research-${id}`;
+
+          // Delete old PDF if it exists
+          if (existingPaper.link) {
+            await this.fileUploadService.deleteFile(existingPaper.link);
+          }
 
           // Upload PDF file
           const pdfUrl = await this.fileUploadService.uploadPdf(
             pdfFile,
-            `research-paper-pdf-${baseName}-${timestamp}-${pdfHash}`,
+            `${baseName}-${timestamp}`,
           );
 
           // Add PDF URL to update data
@@ -369,8 +376,13 @@ export class ResearchPapersService {
    * @returns The deleted research paper
    */
   async remove(id: string) {
-    await this.findOne(id); // Verify it exists
-
+    const researchPaper = await this.findOne(id); // Verify it exists
+    if (researchPaper.image) {
+      await this.fileUploadService.deleteFile(researchPaper.image);
+    }
+    if (researchPaper.link) {
+      await this.fileUploadService.deleteFile(researchPaper.link);
+    }
     return (this.prisma as ExtendedPrismaService).researchPaper.delete({
       where: { id },
       include: {

@@ -61,8 +61,7 @@ export class MediaCoverageService {
       const sanitizedTitle = (createMediaCoverageDto.title || 'media')
         .toLowerCase()
         .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .substring(0, 30);
+        .replace(/[^a-z0-9-]/g, '');
 
       // Handle Cover Image upload
       let imageUrl: string | null = null;
@@ -78,7 +77,7 @@ export class MediaCoverageService {
       if (files.pdfFile?.[0]) {
         pdfUrl = await this.fileUploadService.uploadPdf(
           files.pdfFile[0],
-          `media-coverage-pdf-${sanitizedTitle}-${timestamp}-${hash}`,
+          `${sanitizedTitle}-${timestamp}`,
         );
       }
 
@@ -236,8 +235,7 @@ export class MediaCoverageService {
       )
         .toLowerCase()
         .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .substring(0, 30);
+        .replace(/[^a-z0-9-]/g, '');
 
       // Handle Cover Image upload
       if (files.coverImageFile?.[0]) {
@@ -256,7 +254,7 @@ export class MediaCoverageService {
       if (files.pdfFile?.[0]) {
         const pdfUrl = await this.fileUploadService.uploadPdf(
           files.pdfFile[0],
-          `media-coverage-pdf-${sanitizedTitle}-${timestamp}-${hash}`,
+          ` ${sanitizedTitle}-${timestamp}`,
         );
         if (
           (existingItem as any).pdfFile &&

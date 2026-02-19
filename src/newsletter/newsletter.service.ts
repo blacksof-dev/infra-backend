@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileUploadService } from '../common/file-upload/file-upload.service';
 import { CreateNewsletterDto } from './dto/create-newsletter.dto';
@@ -11,7 +15,7 @@ export class NewsletterService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Create a new newsletter
@@ -22,8 +26,8 @@ export class NewsletterService {
   async create(
     createNewsletterDto: CreateNewsletterDto,
     files?: {
-      coverImageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
+      coverImageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
     },
   ) {
     try {
@@ -51,26 +55,25 @@ export class NewsletterService {
         // Generate unique filenames with timestamp and hash
         const timestamp = Date.now();
         const imageHash = Math.random().toString(36).substring(2, 10);
-        const pdfHash = Math.random().toString(36).substring(2, 10);
 
         // Create a base name for files
         const baseName = createNewsletterDto.title
           ? createNewsletterDto.title
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '')
-            .substring(0, 30) // Shorter title to accommodate hash
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9-]/g, '')
+              .substring(0, 30) // Shorter title to accommodate hash
           : `newsletter-${timestamp}`;
 
         // Upload files
         coverImageUrl = await this.fileUploadService.uploadImage(
           coverImageFile,
-          `newsletter-cover-${baseName}-${timestamp}-${imageHash}`
+          `newsletter-cover-${baseName}-${timestamp}-${imageHash}`,
         );
 
         fileUrl = await this.fileUploadService.uploadPdf(
           pdfFile,
-          `newsletter-pdf-${baseName}-${timestamp}-${pdfHash}`
+          `${baseName}-${timestamp}`,
         );
       }
 
@@ -84,9 +87,10 @@ export class NewsletterService {
       }
 
       // Ensure title is always a string (assign empty string if not provided)
-      const title = createNewsletterDto.title && createNewsletterDto.title.trim() !== ''
-        ? createNewsletterDto.title
-        : '';
+      const title =
+        createNewsletterDto.title && createNewsletterDto.title.trim() !== ''
+          ? createNewsletterDto.title
+          : '';
 
       return this.prisma.newsletter.create({
         data: {
@@ -95,7 +99,10 @@ export class NewsletterService {
           publishedDate,
           coverImage: coverImageUrl,
           fileUrl: fileUrl,
-          active: createNewsletterDto.active !== undefined ? createNewsletterDto.active : true,
+          active:
+            createNewsletterDto.active !== undefined
+              ? createNewsletterDto.active
+              : true,
         },
       });
     } catch (error) {
@@ -194,7 +201,9 @@ export class NewsletterService {
     });
 
     // Extract years and remove duplicates
-    const years = newsletters.map(newsletter => new Date(newsletter.publishedDate).getFullYear());
+    const years = newsletters.map((newsletter) =>
+      new Date(newsletter.publishedDate).getFullYear(),
+    );
     const uniqueYears = [...new Set(years)];
 
     return uniqueYears.sort((a: number, b: number) => b - a) as number[]; // Sort in descending order
@@ -247,8 +256,8 @@ export class NewsletterService {
     id: string,
     updateNewsletterDto: UpdateNewsletterDto,
     files?: {
-      coverImageFile?: Multer.File[],
-      pdfFile?: Multer.File[],
+      coverImageFile?: Multer.File[];
+      pdfFile?: Multer.File[];
     },
   ) {
     try {
@@ -295,18 +304,24 @@ export class NewsletterService {
 
           // Use existing title or ID for filename
           const baseName = existingNewsletter.title
-            ? existingNewsletter.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 30)
+            ? existingNewsletter.title
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
+                .substring(0, 30)
             : `newsletter-${id}`;
 
           // Upload image file
           const coverImageUrl = await this.fileUploadService.uploadImage(
             coverImageFile,
-            `newsletter-cover-${baseName}-${timestamp}-${imageHash}`
+            `newsletter-cover-${baseName}-${timestamp}-${imageHash}`,
           );
 
           // Delete old image if exists
           if (existingNewsletter.coverImage) {
-            await this.fileUploadService.deleteFile(existingNewsletter.coverImage);
+            await this.fileUploadService.deleteFile(
+              existingNewsletter.coverImage,
+            );
           }
 
           // Add image URL to update data
@@ -319,17 +334,20 @@ export class NewsletterService {
 
           // Generate unique filename with timestamp and hash
           const timestamp = Date.now();
-          const pdfHash = Math.random().toString(36).substring(2, 10);
 
           // Use existing title or ID for filename
           const baseName = existingNewsletter.title
-            ? existingNewsletter.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').substring(0, 30)
+            ? existingNewsletter.title
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
+                .substring(0, 30)
             : `newsletter-${id}`;
 
           // Upload PDF file
           const fileUrl = await this.fileUploadService.uploadPdf(
             pdfFile,
-            `newsletter-pdf-${baseName}-${timestamp}-${pdfHash}`
+            `${baseName}-${timestamp}`,
           );
 
           // Delete old PDF if exists
@@ -358,7 +376,17 @@ export class NewsletterService {
    */
   async remove(id: string) {
     // Check if newsletter exists
-    await this.findOne(id);
+    const existingNewsletter = await this.findOne(id);
+
+    // Delete old image if exists
+    if (existingNewsletter.coverImage) {
+      await this.fileUploadService.deleteFile(existingNewsletter.coverImage);
+    }
+
+    // Delete old PDF if exists
+    if (existingNewsletter.fileUrl) {
+      await this.fileUploadService.deleteFile(existingNewsletter.fileUrl);
+    }
 
     return this.prisma.newsletter.delete({
       where: { id },
