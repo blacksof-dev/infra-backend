@@ -270,25 +270,25 @@ export class BlogsController {
     });
   }
 
-  @Get(':id')
+  @Get(':slug')
   @ApiOperation({
-    summary: 'Get a blog by ID',
+    summary: 'Get a blog by slug',
     description:
-      'Retrieves a specific blog by its ID. This endpoint is public.',
+      'Retrieves a specific blog by its slug. This endpoint is public.',
   })
   @ApiParam({
-    name: 'id',
-    description: 'The ID of the blog to retrieve',
+    name: 'slug',
+    description: 'The slug of the blog to retrieve',
   })
   @ApiResponse({
     status: 200,
     description: 'Blog retrieved successfully.',
   })
   @ApiResponse({ status: 404, description: 'Blog not found.' })
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(@Param('slug') slug: string) {
+    return this.service.findOne(slug);
   }
-
+ 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)

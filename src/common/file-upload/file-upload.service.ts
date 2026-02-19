@@ -8,9 +8,15 @@ import type { Multer } from 'multer';
 export class FileUploadService {
   private readonly logger = new Logger(FileUploadService.name);
   private readonly UPLOAD_DIR = 'assets';
-  private readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  private readonly ALLOWED_IMAGE_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+  ];
   private readonly ALLOWED_PDF_TYPE = 'application/pdf';
-  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_FILE_SIZE_PDF = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_FILE_SIZE_IMAGE = 3 * 1024 * 1024; // 3MB
 
   constructor() {
     // Ensure upload directories exist on service initialization
@@ -56,25 +62,29 @@ export class FileUploadService {
 
     // Validate file
     if (file.mimetype !== this.ALLOWED_PDF_TYPE) {
-      throw new BadRequestException('Invalid file type. Only PDF files are allowed.');
+      throw new BadRequestException(
+        'Invalid file type. Only PDF files are allowed.',
+      );
     }
 
-    if (file.size > this.MAX_FILE_SIZE) {
-      throw new BadRequestException(`File size exceeds the limit of ${this.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+    if (file.size > this.MAX_FILE_SIZE_PDF) {
+      throw new BadRequestException(
+        `File size exceeds the limit of ${this.MAX_FILE_SIZE_PDF / (1024 * 1024)}MB`,
+      );
     }
 
     // Generate filename with UUID to prevent conflicts
-    const filename = customFilename 
+    const filename = customFilename
       ? `${customFilename.replace(/[^a-zA-Z0-9-_]/g, '')}.pdf`
       : `${uuidv4()}.pdf`;
-    
+
     const relativePath = path.join('pdf', filename);
     const fullPath = path.join(this.UPLOAD_DIR, relativePath);
 
     try {
       await fs.writeFile(fullPath, file.buffer);
       this.logger.log(`PDF file uploaded successfully: ${fullPath}`);
-      
+
       // Return the URL path that can be stored in the database
       return `/assets/${relativePath}`;
     } catch (error) {
@@ -89,35 +99,42 @@ export class FileUploadService {
    * @param customFilename Optional custom filename (without extension)
    * @returns The URL path to the uploaded image
    */
-  async uploadImage(file: Multer.File, customFilename?: string): Promise<string> {
+  async uploadImage(
+    file: Multer.File,
+    customFilename?: string,
+  ): Promise<string> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
     // Validate file
     if (!this.ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+      throw new BadRequestException(
+        'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
+      );
     }
 
-    if (file.size > this.MAX_FILE_SIZE) {
-      throw new BadRequestException(`File size exceeds the limit of ${this.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+    if (file.size > this.MAX_FILE_SIZE_IMAGE) {
+      throw new BadRequestException(
+        `File size exceeds the limit of ${this.MAX_FILE_SIZE_IMAGE / (1024 * 1024)}MB`,
+      );
     }
 
     // Get file extension from mimetype
     const extension = this.getExtensionFromMimeType(file.mimetype);
-    
+
     // Generate filename with UUID to prevent conflicts
-    const filename = customFilename 
+    const filename = customFilename
       ? `${customFilename.replace(/[^a-zA-Z0-9-_]/g, '')}.${extension}`
       : `${uuidv4()}.${extension}`;
-    
+
     const relativePath = path.join('images', filename);
     const fullPath = path.join(this.UPLOAD_DIR, relativePath);
 
     try {
       await fs.writeFile(fullPath, file.buffer);
       this.logger.log(`Image file uploaded successfully: ${fullPath}`);
-      
+
       // Return the URL path that can be stored in the database
       return `/assets/${relativePath}`;
     } catch (error) {
@@ -136,7 +153,7 @@ export class FileUploadService {
       // Remove the leading slash and 'assets/' if present
       const normalizedPath = filePath.replace(/^\/assets\//, '');
       const fullPath = path.join(this.UPLOAD_DIR, normalizedPath);
-      
+
       await fs.access(fullPath);
       await fs.unlink(fullPath);
       this.logger.log(`File deleted successfully: ${fullPath}`);
