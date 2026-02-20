@@ -15,20 +15,22 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS for all Main domain
-  // const allowedOrigins =
-  //   process.env.NODE_ENV === 'production'
-  //     ? ['https://theinfravisionfoundation.org', 'https://www.theinfravisionfoundation.org']
-  //     : ['http://localhost:3000'];
+  // Enable CORS for specified domains
+  const allowedOrigins = [
+    'https://www.theinfravisionfoundation.org',
+    'https://theinfravisionfoundation.org',
+    'http://localhost:3000',
+    'https://tif-admin.vercel.app',
+  ];
 
-  // app.enableCors({
-  //   origin: allowedOrigins,
-  //   credentials: true,
-  // });
-
-  // Enable CORS for all origins
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 
