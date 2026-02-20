@@ -312,7 +312,16 @@ export class BlogsService {
     },
   ) {
     // Verify blog exists
-    const blog = await this.findOne(id);
+    const blog = await this.prisma.blog.findUnique({
+      where: { id },
+      include: {
+        sectors: true, // Include related sectors
+      },
+    });
+
+    if (!blog) {
+      throw new NotFoundException(`Blog with id '${id}' not found`);
+    }
 
     // Parse date string to Date object if provided
     const { content, ...cleanDto } = updateBlogDto;
