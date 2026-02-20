@@ -62,8 +62,8 @@ export class NewsletterService {
               .toLowerCase()
               .replace(/\s+/g, '-')
               .replace(/[^a-z0-9-]/g, '')
-              .substring(0, 30) // Shorter title to accommodate hash
-          : `newsletter-${timestamp}`;
+          : // Shorter title to accommodate hash
+            `newsletter-${timestamp}`;
 
         // Upload files
         coverImageUrl = await this.fileUploadService.uploadImage(
@@ -341,7 +341,6 @@ export class NewsletterService {
                 .toLowerCase()
                 .replace(/\s+/g, '-')
                 .replace(/[^a-z0-9-]/g, '')
-                .substring(0, 30)
             : `newsletter-${id}`;
 
           // Upload PDF file
