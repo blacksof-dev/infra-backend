@@ -286,9 +286,9 @@ export class BlogsController {
   })
   @ApiResponse({ status: 404, description: 'Blog not found.' })
   findOne(@Param('slug') slug: string) {
-    return this.service.findOne(slug);
+    return this.service.findOneBySlug(slug);
   }
- 
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)

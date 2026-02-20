@@ -277,20 +277,40 @@ export class BlogsService {
    * @param id - The ID of the blog to find
    * @returns The found blog or throws 404 if not found
    */
-  async findOne(slug: string) {
-    if (!slug) {
-      throw new BadRequestException('Blog ID must be provided');
-    }
-
+  async findOneBySlug(slug: string) {
+    if (!slug) throw new BadRequestException('Blog slug must be provided');
     const blog = await this.prisma.blog.findUnique({
       where: { slug },
       include: {
         sectors: true, // Include related sectors
       },
     });
-
     if (!blog) {
       throw new NotFoundException(`Blog with slug '${slug}' not found`);
+    }
+
+    return blog;
+  } 
+  
+  /**
+   * Get a specific blog by ID
+   * @param id - The ID of the blog to find
+   * @returns The found blog or throws 404 if not found
+   */
+  async findOne(id: string) {
+    if (!id) {
+      throw new BadRequestException('Blog ID must be provided');
+    }
+
+    const blog = await this.prisma.blog.findUnique({
+      where: { id },
+      include: {
+        sectors: true, // Include related sectors
+      },
+    });
+
+    if (!blog) {
+      throw new NotFoundException(`Blog with id '${id}' not found`);
     }
 
     return blog;
