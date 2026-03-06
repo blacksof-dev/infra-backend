@@ -20,8 +20,11 @@ export class SeederService implements OnModuleInit {
   private async seedSuperAdmin() {
     try {
       // Check if environment variables are available
-      const superAdminEmail = this.configService.get<string>('SUPERADMIN_EMAIL');
-      const superAdminPassword = this.configService.get<string>('SUPERADMIN_PASSWORD');
+      const superAdminEmail =
+        this.configService.get<string>('SUPERADMIN_EMAIL');
+      const superAdminPassword = this.configService.get<string>(
+        'SUPERADMIN_PASSWORD',
+      );
       const superAdminName = this.configService.get<string>('SUPERADMIN_NAME');
 
       if (!superAdminEmail || !superAdminPassword || !superAdminName) {
@@ -39,13 +42,11 @@ export class SeederService implements OnModuleInit {
       }
 
       const superAdmin = await this.authService.createSuperAdmin();
-      this.logger.log(
-        `SuperAdmin seeded successfully: ${superAdmin.email}`,
-      );
+      this.logger.log(`SuperAdmin seeded successfully: ${superAdmin.email}`);
     } catch (error) {
       this.logger.error('Failed to seed SuperAdmin:', error.message);
       this.logger.error('Error details:', error.stack);
-      
+
       // Provide helpful guidance
       this.logger.warn('Make sure your database is running and accessible.');
       this.logger.warn('Check your DATABASE_URL in the .env file.');

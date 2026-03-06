@@ -69,7 +69,7 @@ export class InfraPanditAwardsController {
   @ApiBearerAuth('JWT-auth')
   // @ApiConsumes('multipart/form-data')
   async updateEligibility(@Body() dto: UpdateEligibilityDto) {
-    console.log(dto);
+    // console.log(dto);
     const data = await this.service.updateEligibility(dto);
     return { success: true, id: data.id };
   }
@@ -79,7 +79,7 @@ export class InfraPanditAwardsController {
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   async updateApplicationForm(@Body() dto: UpdateApplicationFormDto) {
-    console.log(dto);
+    // console.log(dto);
     const data = await this.service.updateApplicationForm(dto);
     return { success: true, id: data.id };
   }

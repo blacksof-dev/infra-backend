@@ -61,7 +61,7 @@ export class AuthService {
   async createSuperAdmin() {
     const superAdminEmail =
       this.configService.get<string>('SUPERADMIN_EMAIL') ||
-      'superadmin@admin.com';
+      'hari.pillai@theinfravisionfoundation.org';
     const superAdminPassword =
       this.configService.get<string>('SUPERADMIN_PASSWORD') || 'SuperAdmin@123';
     const superAdminName =
@@ -207,7 +207,7 @@ export class AuthService {
 
     const data = {
       from: `The Infravision Foundation <${resendFromEmail}>`,
-      to: ['sitaram.mewada@blacksof.com'],
+      to: [email],
       subject: 'Password Reset Request',
       html: `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">

@@ -127,10 +127,10 @@ export class InfraPanditAwardsService {
   }
 
   async updateEligibility(dto: UpdateEligibilityDto) {
-    console.log(
-      'Update Eligibility DTO:',
-      JSON.stringify(dto).substring(0, 100),
-    );
+    // console.log(
+    //   'Update Eligibility DTO:',
+    //   JSON.stringify(dto).substring(0, 100),
+    // );
     const section = await this.getAwardSection();
     const data: any = {};
     if (dto.ctaText !== undefined) data.ctaText = dto.ctaText;
@@ -149,10 +149,10 @@ export class InfraPanditAwardsService {
   }
 
   async updateApplicationForm(dto: UpdateApplicationFormDto) {
-    console.log(
-      'Update Application DTO:',
-      JSON.stringify(dto).substring(0, 100),
-    );
+    // console.log(
+    //   'Update Application DTO:',
+    //   JSON.stringify(dto).substring(0, 100),
+    // );
     const section = await this.getAwardSection();
     const data: any = {};
     if (dto.ctaText !== undefined) data.ctaText = dto.ctaText;

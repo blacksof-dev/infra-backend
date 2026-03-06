@@ -9,11 +9,13 @@
 ## Quick Setup
 
 ### 1. Install Dependencies
+
 ```bash
 yarn install
 ```
 
 ### 2. Environment Configuration
+
 Copy the template and create your environment file:
 
 ```bash
@@ -24,7 +26,7 @@ cp env.template .env
 Or manually create a `.env` file in the root directory with the following variables:
 
 ```env
-# Database
+# Database Configuration
 DATABASE_URL="mongodb://localhost:27017/infra-backend"
 
 # JWT Configuration
@@ -36,12 +38,20 @@ SUPERADMIN_EMAIL="superadmin@admin.com"
 SUPERADMIN_PASSWORD="SuperAdmin@123"
 SUPERADMIN_NAME="Super Administrator"
 
-# Application
-PORT=3000
-NODE_ENV="development"
+# Application Settings
+PORT=4000
+
+NODE_ENV="development" # NODE_ENV="production"
+FRONTEND_URL="http://localhost:3000"
+
+# Email JS setup
+RESEND_API_KEY = "re_erffefeefef_AhRyJCqpxo6v2sM7qHrvGCW6" # this is for test only
+RESEND_FROM_EMAIL = "onboarding@resend.dev" # This is a temporary email. Please update it to the official email and verify it on Resend.
+
 ```
 
 ### 3. Database Setup
+
 ```bash
 # Generate Prisma client
 yarn prisma:generate
@@ -51,6 +61,7 @@ yarn prisma:push
 ```
 
 ### 4. Start the Application
+
 ```bash
 # Development mode with hot reload
 yarn start:dev
@@ -60,17 +71,20 @@ yarn start:prod
 ```
 
 ### 5. Verify Setup
+
 The application will automatically create the superadmin user on startup. You should see:
+
 ```
-🚀 Admin Panel Backend running on port 3000
+🚀 Admin Panel Backend running on port 4000
 📚 Environment: development
 ```
 
 ## Testing the API
 
 ### Login as SuperAdmin
+
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:4000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "superadmin@admin.com",
@@ -79,9 +93,10 @@ curl -X POST http://localhost:3000/auth/login \
 ```
 
 ### Create a New Admin
+
 ```bash
 # First, get the JWT token from login response, then:
-curl -X POST http://localhost:3000/admin \
+curl -X POST http://localhost:4000/admin \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -112,7 +127,7 @@ curl -X POST http://localhost:3000/admin \
 ✅ **Self-Protection** - Users cannot delete themselves  
 ✅ **SuperAdmin Protection** - SuperAdmin accounts cannot be deleted  
 ✅ **Input Validation** - All inputs are validated using class-validator  
-✅ **CORS Configuration** - Configurable CORS settings  
+✅ **CORS Configuration** - Configurable CORS settings
 
 ## API Documentation
 
@@ -121,15 +136,19 @@ See `API_DOCUMENTATION.md` for detailed API endpoint documentation.
 ## Troubleshooting
 
 ### Prisma Generate Issues
+
 If you encounter permission errors with Prisma generate on Windows:
+
 1. Close all editors/IDEs
 2. Run the command again
 3. Or restart your development server
 
 ### Database Connection Issues
+
 - Ensure MongoDB is running
 - Check the DATABASE_URL in your .env file
 - Verify database name and connection string
 
 ### Port Already in Use
+
 Change the PORT in your .env file or stop the process using the port.

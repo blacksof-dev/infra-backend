@@ -6,7 +6,7 @@ This admin panel backend now includes comprehensive Swagger/OpenAPI documentatio
 
 ## Accessing Swagger UI
 
-Once the application is running, you can access the Swagger documentation at:
+Once the application is running on development environment, you can access the Swagger documentation at:
 
 ```
 http://localhost:4000/docs
@@ -15,12 +15,14 @@ http://localhost:4000/docs
 ## Features
 
 ### 🔧 **Interactive API Testing**
+
 - Test all endpoints directly from the browser
 - Automatic request/response validation
 - JWT token authentication support
 - Persistent authorization (tokens are saved in browser)
 
 ### 📚 **Comprehensive Documentation**
+
 - Detailed endpoint descriptions
 - Request/response schemas
 - Example payloads
@@ -28,6 +30,7 @@ http://localhost:4000/docs
 - Security requirements
 
 ### 🔐 **Authentication Integration**
+
 - Bearer token authentication
 - Automatic authorization headers
 - Role-based access documentation
@@ -35,9 +38,11 @@ http://localhost:4000/docs
 ## API Sections
 
 ### 1. Authentication
+
 - **POST /auth/login** - Admin login with email/password
 
 ### 2. Admin Management
+
 - **POST /admin** - Create new admin (SUPERADMIN only)
 - **GET /admin** - Get all admins (SUPERADMIN only)
 - **GET /admin/profile** - Get current user profile
@@ -47,6 +52,7 @@ http://localhost:4000/docs
 ## How to Use Swagger UI
 
 ### Step 1: Login
+
 1. Navigate to the Authentication section
 2. Click on **POST /auth/login**
 3. Click "Try it out"
@@ -61,6 +67,7 @@ http://localhost:4000/docs
 6. Copy the `access_token` from the response
 
 ### Step 2: Authorize
+
 1. Click the "Authorize" button at the top of the page (the lock icon)
 2. You'll see a dialog titled "Available authorizations"
 3. In the input field under "Value", enter your token with the format: `Bearer your_token_here`
@@ -70,11 +77,13 @@ http://localhost:4000/docs
 5. Click "Close"
 
 ### Step 3: Test Endpoints
+
 Now you can test any endpoint. The JWT token will be automatically included in the Authorization header.
 
 ## Request/Response Examples
 
 ### Login Request
+
 ```json
 {
   "email": "superadmin@admin.com",
@@ -83,6 +92,7 @@ Now you can test any endpoint. The JWT token will be automatically included in t
 ```
 
 ### Login Response
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -96,6 +106,7 @@ Now you can test any endpoint. The JWT token will be automatically included in t
 ```
 
 ### Create Admin Request
+
 ```json
 {
   "name": "John Doe",
@@ -105,6 +116,7 @@ Now you can test any endpoint. The JWT token will be automatically included in t
 ```
 
 ### Admin Response
+
 ```json
 {
   "id": "507f1f77bcf86cd799439012",
@@ -117,6 +129,7 @@ Now you can test any endpoint. The JWT token will be automatically included in t
 ```
 
 ### Delete Admin Request
+
 ```json
 {
   "superAdminPassword": "SuperAdmin@123"
@@ -126,22 +139,26 @@ Now you can test any endpoint. The JWT token will be automatically included in t
 ## Security Documentation
 
 ### Authentication
+
 - All endpoints except `/auth/login` require JWT authentication
 - JWT tokens are passed in the Authorization header as `Bearer <token>`
 - Tokens expire based on the `JWT_EXPIRES_IN` environment variable (default: 24h)
 
 ### Authorization
+
 - **SUPERADMIN** can perform all operations
 - **ADMIN** can only view/update their own profile
 - Role-based access control is enforced on all endpoints
 
 ### Validation
+
 - All input data is validated using class-validator
 - Email format validation
 - Password minimum length (8 characters)
 - Required field validation
 
 ### Error Responses
+
 The API returns standard HTTP status codes with detailed error messages:
 
 - **400 Bad Request** - Invalid input data
@@ -155,7 +172,7 @@ The API returns standard HTTP status codes with detailed error messages:
 Make sure your `.env` file contains:
 
 ```env
-# Database
+# Database Configuration
 DATABASE_URL="mongodb://localhost:27017/infra-backend"
 
 # JWT Configuration
@@ -167,29 +184,40 @@ SUPERADMIN_EMAIL="superadmin@admin.com"
 SUPERADMIN_PASSWORD="SuperAdmin@123"
 SUPERADMIN_NAME="Super Administrator"
 
-# Application
+# Application Settings
 PORT=4000
-NODE_ENV="development"
+
+NODE_ENV="development" # NODE_ENV="production"
+FRONTEND_URL="http://localhost:3000"
+
+# Email JS setup
+RESEND_API_KEY = "re_erffefeefef_AhRyJCqpxo6v2sM7qHrvGCW6" # this is for test only
+RESEND_FROM_EMAIL = "onboarding@resend.dev" # This is a temporary email. Please update it to the official email and verify it on Resend.
+
 ```
 
 ## Starting the Application
 
 1. **Install dependencies:**
+
    ```bash
    yarn install
    ```
 
 2. **Generate Prisma client:**
+
    ```bash
    yarn prisma:generate
    ```
 
 3. **Push schema to database:**
+
    ```bash
    yarn prisma:push
    ```
 
 4. **Start the application:**
+
    ```bash
    yarn start:dev
    ```

@@ -146,7 +146,7 @@ export class ResearchPapersService {
 
     // Filter by sector if provided
     if (sectorId) {
-      console.log(sectorId);
+      // console.log(sectorId);
       where.sectorIds = {
         has: sectorId,
       };

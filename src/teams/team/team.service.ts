@@ -11,7 +11,7 @@ export class TeamService {
   constructor(
     private prisma: PrismaService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Get all team members with pagination and filtering
@@ -59,8 +59,6 @@ export class TeamService {
     };
   }
 
-
-
   /**
    * Get a team member by ID
    * @param id Team member ID
@@ -107,7 +105,7 @@ export class TeamService {
 
         imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `team-${sanitizedName}-${timestamp}-${randomHash}`
+          `team-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
 
@@ -123,11 +121,11 @@ export class TeamService {
 
         popupImgUrl = await this.fileUploadService.uploadImage(
           popupImgFile,
-          `team-popup-${sanitizedName}-${timestamp}-${randomHash}`
+          `team-popup-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
 
-      console.log("data to be created", data)
+      // console.log("data to be created", data)
 
       const created = await this.prisma.team.create({
         data: {
@@ -143,7 +141,9 @@ export class TeamService {
         },
       });
 
-      this.logger.log(`Created new team member: ${created.title} (ID: ${created.id})`);
+      this.logger.log(
+        `Created new team member: ${created.title} (ID: ${created.id})`,
+      );
       return created;
     } catch (error) {
       this.logger.error(`Failed to create team member: ${error.message}`);
@@ -166,7 +166,9 @@ export class TeamService {
     popupImgFile?: Multer.File,
   ) {
     // Check if team member exists
-    const existingTeamMember = await this.prisma.team.findUnique({ where: { id } });
+    const existingTeamMember = await this.prisma.team.findUnique({
+      where: { id },
+    });
 
     try {
       const updateData: any = { ...data };
@@ -176,24 +178,29 @@ export class TeamService {
         const timestamp = Date.now();
         const randomHash = Math.random().toString(36).substring(2, 10);
         const sanitizedName = data.title || existingTeamMember?.title;
-        const formattedName = sanitizedName ?? ""
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '')
-          .substring(0, 30);
+        const formattedName =
+          sanitizedName ??
+          ''
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '')
+            .substring(0, 30);
 
         const imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `team-${formattedName}-${timestamp}-${randomHash}`
+          `team-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.image = imageUrl;
 
         // Delete old image if it exists and is in our assets
-        if (existingTeamMember?.image && existingTeamMember.image.startsWith('/assets/')) {
+        if (
+          existingTeamMember?.image &&
+          existingTeamMember.image.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingTeamMember.image.replace('/assets/', '')
+            existingTeamMember.image.replace('/assets/', ''),
           );
         }
       }
@@ -203,24 +210,29 @@ export class TeamService {
         const timestamp = Date.now();
         const randomHash = Math.random().toString(36).substring(2, 10);
         const sanitizedName = data.title || existingTeamMember?.title;
-        const formattedName = sanitizedName ?? ""
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^a-z0-9-]/g, '')
-          .substring(0, 30);
+        const formattedName =
+          sanitizedName ??
+          ''
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '')
+            .substring(0, 30);
 
         const popupImgUrl = await this.fileUploadService.uploadImage(
           popupImgFile,
-          `team-popup-${formattedName}-${timestamp}-${randomHash}`
+          `team-popup-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.popupImg = popupImgUrl;
 
         // Delete old popup image if it exists and is in our assets
-        if (existingTeamMember?.popupImg && existingTeamMember.popupImg.startsWith('/assets/')) {
+        if (
+          existingTeamMember?.popupImg &&
+          existingTeamMember.popupImg.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingTeamMember.popupImg.replace('/assets/', '')
+            existingTeamMember.popupImg.replace('/assets/', ''),
           );
         }
       }
@@ -228,15 +240,24 @@ export class TeamService {
       // Create update data object with only the fields that should be updated
       const prismaUpdateData: any = {};
 
-      if (updateData.title !== undefined) prismaUpdateData.title = updateData.title;
-      if (updateData.desig !== undefined) prismaUpdateData.desig = updateData.desig;
-      if (updateData.popupdesc !== undefined) prismaUpdateData.popupdesc = updateData.popupdesc;
-      if (updateData.link !== undefined) prismaUpdateData.link = updateData.link;
-      if (updateData.socialMedia !== undefined) prismaUpdateData.socialMedia = updateData.socialMedia;
-      if (updateData.order !== undefined) prismaUpdateData.order = updateData.order;
-      if (updateData.active !== undefined) prismaUpdateData.active = updateData.active;
-      if (updateData.image !== undefined) prismaUpdateData.image = updateData.image;
-      if (updateData.popupImg !== undefined) prismaUpdateData.popupImg = updateData.popupImg;
+      if (updateData.title !== undefined)
+        prismaUpdateData.title = updateData.title;
+      if (updateData.desig !== undefined)
+        prismaUpdateData.desig = updateData.desig;
+      if (updateData.popupdesc !== undefined)
+        prismaUpdateData.popupdesc = updateData.popupdesc;
+      if (updateData.link !== undefined)
+        prismaUpdateData.link = updateData.link;
+      if (updateData.socialMedia !== undefined)
+        prismaUpdateData.socialMedia = updateData.socialMedia;
+      if (updateData.order !== undefined)
+        prismaUpdateData.order = updateData.order;
+      if (updateData.active !== undefined)
+        prismaUpdateData.active = updateData.active;
+      if (updateData.image !== undefined)
+        prismaUpdateData.image = updateData.image;
+      if (updateData.popupImg !== undefined)
+        prismaUpdateData.popupImg = updateData.popupImg;
 
       // Update team member in database
       const updatedTeamMember = await this.prisma.team.update({

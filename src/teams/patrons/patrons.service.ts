@@ -171,7 +171,7 @@ export class PatronsService {
     const existingPatron = await this.prisma.patron.findUnique({
       where: { id },
     });
-    console.log(data);
+    // console.log(data);
     if (!existingPatron) {
       throw new NotFoundException(`Patron with ID ${id} not found`);
     }

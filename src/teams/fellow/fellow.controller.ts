@@ -11,7 +11,7 @@ import {
   UploadedFiles,
   Patch,
   UseGuards,
-  ParseBoolPipe
+  ParseBoolPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +19,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
-  ApiBearerAuth
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -33,7 +33,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 @ApiTags('Teams')
 @Controller('teams/fellow')
 export class FellowController {
-  constructor(private readonly service: FellowService) { }
+  constructor(private readonly service: FellowService) {}
 
   /**
    * Get all fellows
@@ -42,7 +42,8 @@ export class FellowController {
   @Get()
   @ApiOperation({
     summary: 'Get all fellows',
-    description: 'Retrieves fellows data. This endpoint is public and does not require authentication.'
+    description:
+      'Retrieves fellows data. This endpoint is public and does not require authentication.',
   })
   @ApiResponse({
     status: 200,
@@ -61,7 +62,7 @@ export class FellowController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get all fellows with pagination (admin)',
-    description: 'Admin endpoint to retrieve all fellows with pagination'
+    description: 'Admin endpoint to retrieve all fellows with pagination',
   })
   @ApiResponse({
     status: 200,
@@ -75,7 +76,7 @@ export class FellowController {
     return this.service.findAll(
       page ? +page : 1,
       limit ? +limit : 10,
-      activeOnly || false
+      activeOnly || false,
     );
   }
 
@@ -88,7 +89,7 @@ export class FellowController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get fellow by ID',
-    description: 'Retrieve a specific fellow by ID'
+    description: 'Retrieve a specific fellow by ID',
   })
   @ApiResponse({
     status: 200,
@@ -112,7 +113,7 @@ export class FellowController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new fellow',
-    description: 'Create a new fellow with image upload'
+    description: 'Create a new fellow with image upload',
   })
   @ApiBody({
     description: 'Fellow data with image upload',
@@ -153,6 +154,10 @@ export class FellowController {
           type: 'string',
           description: 'Social media platform (optional)',
         },
+        order: {
+          type: 'integer',
+          description: 'Order for sorting fellows (optional, default: 0)',
+        },
         active: {
           type: 'boolean',
           description: 'Whether the fellow is active (optional)',
@@ -161,13 +166,16 @@ export class FellowController {
       required: ['title', 'desig', 'subtitle', 'popupdesc'],
     },
   })
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'image', maxCount: 1 },
-    { name: 'popupImage', maxCount: 1 },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image', maxCount: 1 },
+      { name: 'popupImage', maxCount: 1 },
+    ]),
+  )
   async create(
     @Body() body: any,
-    @UploadedFiles() files: { image?: Array<Multer.File>, popupImage?: Array<Multer.File> }
+    @UploadedFiles()
+    files: { image?: Array<Multer.File>; popupImage?: Array<Multer.File> },
   ) {
     const createFellowDto: CreateFellowDto = {
       title: body.title,
@@ -176,13 +184,18 @@ export class FellowController {
       popupdesc: body.popupdesc,
       link: body.link,
       socialMedia: body.socialMedia,
-      active: body.active === undefined ? undefined : body.active === 'true' || body.active === true,
+      active:
+        body.active === undefined
+          ? undefined
+          : body.active === 'true' || body.active === true,
+      // Parse order as integer if provided
+      order: body.order !== undefined ? parseInt(body.order, 10) : undefined,
     };
 
     return this.service.create(
       createFellowDto,
       files.image?.[0],
-      files.popupImage?.[0]
+      files.popupImage?.[0],
     );
   }
 
@@ -196,12 +209,14 @@ export class FellowController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Update a fellow',
-    description: 'Update an existing fellow with optional image upload'
+    description: 'Update an existing fellow with optional image upload',
   })
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'image', maxCount: 1 },
-    { name: 'popupImage', maxCount: 1 },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image', maxCount: 1 },
+      { name: 'popupImage', maxCount: 1 },
+    ]),
+  )
   @ApiBody({
     description: 'Fellow data with optional image upload',
     schema: {
@@ -241,6 +256,10 @@ export class FellowController {
           type: 'string',
           description: 'Social media platform (optional)',
         },
+        order: {
+          type: 'integer',
+          description: 'Order for sorting fellows (optional)',
+        },
         active: {
           type: 'boolean',
           description: 'Whether the fellow is active (optional)',
@@ -252,16 +271,25 @@ export class FellowController {
   async update(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFiles() files: { image?: Array<Multer.File>, popupImage?: Array<Multer.File> }
+    @UploadedFiles()
+    files: { image?: Array<Multer.File>; popupImage?: Array<Multer.File> },
   ) {
     const updateFellowDto: UpdateFellowDto = {};
 
     if (body.title !== undefined) updateFellowDto.title = body.title;
     if (body.desig !== undefined) updateFellowDto.desig = body.desig;
     if (body.subtitle !== undefined) updateFellowDto.subtitle = body.subtitle;
-    if (body.popupdesc !== undefined) updateFellowDto.popupdesc = body.popupdesc;
+    if (body.popupdesc !== undefined)
+      updateFellowDto.popupdesc = body.popupdesc;
     if (body.link !== undefined) updateFellowDto.link = body.link;
-    if (body.socialMedia !== undefined) updateFellowDto.socialMedia = body.socialMedia;
+    if (body.socialMedia !== undefined)
+      updateFellowDto.socialMedia = body.socialMedia;
+
+    // Parse order as integer if provided
+    if (body.order !== undefined) {
+      updateFellowDto.order = parseInt(body.order, 10);
+    }
+
     if (body.active !== undefined) {
       updateFellowDto.active = body.active === 'true' || body.active === true;
     }
@@ -270,7 +298,7 @@ export class FellowController {
       id,
       updateFellowDto,
       files.image?.[0],
-      files.popupImage?.[0]
+      files.popupImage?.[0],
     );
   }
 
@@ -283,7 +311,7 @@ export class FellowController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Toggle fellow active status',
-    description: 'Toggle the active status of a fellow'
+    description: 'Toggle the active status of a fellow',
   })
   async toggleStatus(@Param('id') id: string) {
     return this.service.toggleStatus(id);
@@ -298,7 +326,7 @@ export class FellowController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a fellow',
-    description: 'Delete a fellow and associated files'
+    description: 'Delete a fellow and associated files',
   })
   async remove(@Param('id') id: string) {
     return this.service.remove(id);

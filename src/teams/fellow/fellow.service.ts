@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateFellowDto } from './dto/create-fellow.dto';
 import { UpdateFellowDto } from './dto/update-fellow.dto';
@@ -17,7 +22,7 @@ export class FellowService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   /**
    * Create a new fellow
@@ -43,7 +48,7 @@ export class FellowService {
 
         imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `fellow-${sanitizedName}-${timestamp}-${randomHash}`
+          `fellow-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
 
@@ -59,24 +64,30 @@ export class FellowService {
 
         popupImgUrl = await this.fileUploadService.uploadImage(
           popupImageFile,
-          `fellow-popup-${sanitizedName}-${timestamp}-${randomHash}`
+          `fellow-popup-${sanitizedName}-${timestamp}-${randomHash}`,
         );
       }
 
       // Create fellow with file URL
-      const fellow = await (this.prisma as ExtendedPrismaService).fellow.create({
-        data: {
-          image: imageUrl,
-          title: createFellowDto.title,
-          desig: createFellowDto.desig,
-          subtitle: createFellowDto.subtitle,
-          popupdesc: createFellowDto.popupdesc,
-          link: createFellowDto.link,
-          socialMedia: createFellowDto.socialMedia,
-          popupImg: popupImgUrl || null,
-          active: createFellowDto.active !== undefined ? createFellowDto.active : true,
+      const fellow = await (this.prisma as ExtendedPrismaService).fellow.create(
+        {
+          data: {
+            image: imageUrl,
+            title: createFellowDto.title,
+            desig: createFellowDto.desig,
+            subtitle: createFellowDto.subtitle,
+            popupdesc: createFellowDto.popupdesc,
+            link: createFellowDto.link,
+            socialMedia: createFellowDto.socialMedia,
+            popupImg: popupImgUrl || null,
+            order: createFellowDto.order ?? 0,
+            active:
+              createFellowDto.active !== undefined
+                ? createFellowDto.active
+                : true,
+          },
         },
-      });
+      );
 
       this.logger.log(`Created new fellow: ${createFellowDto.title}`);
       return fellow;
@@ -100,7 +111,7 @@ export class FellowService {
           where,
           skip,
           take: limit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { order: 'asc' },
         }),
         (this.prisma as ExtendedPrismaService).fellow.count({ where }),
       ]);
@@ -128,7 +139,9 @@ export class FellowService {
    * Get a specific fellow by ID
    */
   async findOne(id: string) {
-    const fellow = await (this.prisma as ExtendedPrismaService).fellow.findUnique({
+    const fellow = await (
+      this.prisma as ExtendedPrismaService
+    ).fellow.findUnique({
       where: { id },
     });
 
@@ -167,14 +180,17 @@ export class FellowService {
 
         const imageUrl = await this.fileUploadService.uploadImage(
           imageFile,
-          `fellow-${formattedName}-${timestamp}-${randomHash}`
+          `fellow-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.image = imageUrl;
 
-        if (existingFellow.image && existingFellow.image.startsWith('/assets/')) {
+        if (
+          existingFellow.image &&
+          existingFellow.image.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingFellow.image.replace('/assets/', '')
+            existingFellow.image.replace('/assets/', ''),
           );
         }
       }
@@ -192,20 +208,25 @@ export class FellowService {
 
         const popupImgUrl = await this.fileUploadService.uploadImage(
           popupImageFile,
-          `fellow-popup-${formattedName}-${timestamp}-${randomHash}`
+          `fellow-popup-${formattedName}-${timestamp}-${randomHash}`,
         );
 
         updateData.popupImg = popupImgUrl;
 
-        if (existingFellow.popupImg && existingFellow.popupImg.startsWith('/assets/')) {
+        if (
+          existingFellow.popupImg &&
+          existingFellow.popupImg.startsWith('/assets/')
+        ) {
           await this.fileUploadService.deleteFile(
-            existingFellow.popupImg.replace('/assets/', '')
+            existingFellow.popupImg.replace('/assets/', ''),
           );
         }
       }
 
       // Update fellow
-      const updatedFellow = await (this.prisma as ExtendedPrismaService).fellow.update({
+      const updatedFellow = await (
+        this.prisma as ExtendedPrismaService
+      ).fellow.update({
         where: { id },
         data: updateData,
       });
@@ -248,14 +269,14 @@ export class FellowService {
       // Delete image if it exists and is in our assets
       if (fellow.image && fellow.image.startsWith('/assets/')) {
         await this.fileUploadService.deleteFile(
-          fellow.image.replace('/assets/', '')
+          fellow.image.replace('/assets/', ''),
         );
       }
 
       // Delete popup image if it exists and is in our assets
       if (fellow.popupImg && fellow.popupImg.startsWith('/assets/')) {
         await this.fileUploadService.deleteFile(
-          fellow.popupImg.replace('/assets/', '')
+          fellow.popupImg.replace('/assets/', ''),
         );
       }
 
@@ -280,32 +301,24 @@ export class FellowService {
         return {
           fellow: result.data,
           totalCount: result.meta.total,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         };
       }
     } catch (error) {
-      this.logger.warn('Failed to get fellows from database, falling back to static data');
+      this.logger.warn(
+        'Failed to get fellows from database, falling back to static data',
+      );
     }
 
     // Fallback to static data
     const fellow: any[] = [
-      {
-        image: "/assets/home/fellows/rasikaAthawale.jpg",
-        title: "Rasika Athawale",
-        desig: "Electricity policy & regulatory expert; Consultant, Big4 Consulting",
-        subtitle: "Distinguished Fellow (Power)",
-        popupImg: "/assets/home/trustees/vinayakImg.png",
-        link: "https://www.linkedin.com/in/rasika-athawale-5072ab1/",
-        socialMedia: "linkedin",
-        popupdesc: `Rasika Athawale is a management professional with approximately two decades of experience in the energy and utilities sector.`,
-      },
       // More fellows would be here in the actual implementation
     ];
 
     return {
       fellow,
       totalCount: fellow.length,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
   }
 }

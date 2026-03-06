@@ -11,7 +11,7 @@ import {
   UploadedFiles,
   Patch,
   UseGuards,
-  ParseBoolPipe
+  ParseBoolPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +19,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
-  ApiBearerAuth
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -33,7 +33,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 @ApiTags('Teams')
 @Controller('teams/advisors')
 export class AdvisorsController {
-  constructor(private readonly service: AdvisorsService) { }
+  constructor(private readonly service: AdvisorsService) {}
 
   /**
    * Get all advisors
@@ -42,7 +42,8 @@ export class AdvisorsController {
   @Get()
   @ApiOperation({
     summary: 'Get all advisors',
-    description: 'Retrieves advisors data. This endpoint is public and does not require authentication.'
+    description:
+      'Retrieves advisors data. This endpoint is public and does not require authentication.',
   })
   @ApiResponse({
     status: 200,
@@ -51,8 +52,6 @@ export class AdvisorsController {
   async getAdvisors() {
     return this.service.getAdvisors();
   }
-
-
 
   /**
    * Get advisor by ID
@@ -63,7 +62,7 @@ export class AdvisorsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get advisor by ID',
-    description: 'Retrieve a specific advisor by ID'
+    description: 'Retrieve a specific advisor by ID',
   })
   @ApiResponse({
     status: 200,
@@ -87,7 +86,7 @@ export class AdvisorsController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new advisor',
-    description: 'Create a new advisor with image upload'
+    description: 'Create a new advisor with image upload',
   })
   @ApiBody({
     description: 'Advisor data with image upload',
@@ -124,6 +123,10 @@ export class AdvisorsController {
           type: 'string',
           description: 'Social media platform (optional)',
         },
+        order: {
+          type: 'integer',
+          description: 'Order for sorting advisors (optional, default: 0)',
+        },
         active: {
           type: 'boolean',
           description: 'Whether the advisor is active (optional)',
@@ -132,25 +135,33 @@ export class AdvisorsController {
       required: ['title', 'desig', 'popupdesc'],
     },
   })
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'image', maxCount: 1 },
-    { name: 'popupImage', maxCount: 1 },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image', maxCount: 1 },
+      { name: 'popupImage', maxCount: 1 },
+    ]),
+  )
   async create(
     @Body() body: any,
-    @UploadedFiles() files: { image?: Array<Multer.File>, popupImage?: Array<Multer.File> }
+    @UploadedFiles()
+    files: { image?: Array<Multer.File>; popupImage?: Array<Multer.File> },
   ) {
     // Parse form data properly
     const createAdvisorDto: CreateAdvisorDto = {
       ...body,
       // Parse active as boolean if provided
-      active: body.active === undefined ? undefined : body.active === 'true' || body.active === true
+      active:
+        body.active === undefined
+          ? undefined
+          : body.active === 'true' || body.active === true,
+      // Parse order as integer if provided
+      order: body.order !== undefined ? parseInt(body.order, 10) : undefined,
     };
 
     return this.service.create(
       createAdvisorDto,
       files.image?.[0],
-      files.popupImage?.[0]
+      files.popupImage?.[0],
     );
   }
 
@@ -164,7 +175,7 @@ export class AdvisorsController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Update an advisor',
-    description: 'Update an existing advisor with optional image upload'
+    description: 'Update an existing advisor with optional image upload',
   })
   @ApiBody({
     description: 'Advisor data with optional image upload',
@@ -201,6 +212,10 @@ export class AdvisorsController {
           type: 'string',
           description: 'Social media platform (optional)',
         },
+        order: {
+          type: 'integer',
+          description: 'Order for sorting advisors (optional)',
+        },
         active: {
           type: 'boolean',
           description: 'Whether the advisor is active (optional)',
@@ -209,14 +224,17 @@ export class AdvisorsController {
       required: [],
     },
   })
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'image', maxCount: 1 },
-    { name: 'popupImage', maxCount: 1 },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image', maxCount: 1 },
+      { name: 'popupImage', maxCount: 1 },
+    ]),
+  )
   async update(
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFiles() files: { image?: Array<Multer.File>, popupImage?: Array<Multer.File> }
+    @UploadedFiles()
+    files: { image?: Array<Multer.File>; popupImage?: Array<Multer.File> },
   ) {
     // Parse form data properly
     const updateAdvisorDto: UpdateAdvisorDto = {};
@@ -224,9 +242,16 @@ export class AdvisorsController {
     // Only add fields that are explicitly provided
     if (body.title !== undefined) updateAdvisorDto.title = body.title;
     if (body.desig !== undefined) updateAdvisorDto.desig = body.desig;
-    if (body.popupdesc !== undefined) updateAdvisorDto.popupdesc = body.popupdesc;
+    if (body.popupdesc !== undefined)
+      updateAdvisorDto.popupdesc = body.popupdesc;
     if (body.link !== undefined) updateAdvisorDto.link = body.link;
-    if (body.socialMedia !== undefined) updateAdvisorDto.socialMedia = body.socialMedia;
+    if (body.socialMedia !== undefined)
+      updateAdvisorDto.socialMedia = body.socialMedia;
+
+    // Parse order as integer if provided
+    if (body.order !== undefined) {
+      updateAdvisorDto.order = parseInt(body.order, 10);
+    }
 
     // Parse active as boolean if provided
     if (body.active !== undefined) {
@@ -237,7 +262,7 @@ export class AdvisorsController {
       id,
       updateAdvisorDto,
       files.image?.[0],
-      files.popupImage?.[0]
+      files.popupImage?.[0],
     );
   }
 
@@ -250,7 +275,7 @@ export class AdvisorsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Toggle advisor active status',
-    description: 'Toggle the active status of an advisor'
+    description: 'Toggle the active status of an advisor',
   })
   async toggleStatus(@Param('id') id: string) {
     return this.service.toggleStatus(id);
@@ -265,7 +290,7 @@ export class AdvisorsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete an advisor',
-    description: 'Delete an advisor and associated files'
+    description: 'Delete an advisor and associated files',
   })
   async remove(@Param('id') id: string) {
     return this.service.remove(id);

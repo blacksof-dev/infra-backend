@@ -30,16 +30,6 @@ Welcome to the **InfraVision Backend**! This project is the engine behind the In
 3. **Configure Environment Variables**:
    Create a `.env` file in the root directory. You can use the `env.template` as a starting point.
 
-   ```env
-   DATABASE_URL="mongodb+srv://..."
-   JWT_SECRET="your_secret_key"
-
-   # Optional: Initial SuperAdmin Configuration
-   SUPERADMIN_EMAIL="admin@infravision.com"
-   SUPERADMIN_PASSWORD="YourStrongPassword123"
-   SUPERADMIN_NAME="Main Admin"
-   ```
-
 4. **Synchronize Database Schema**:
    Prisma needs to generate its client and push the schema to MongoDB.
 

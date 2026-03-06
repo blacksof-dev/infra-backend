@@ -292,6 +292,7 @@ model Advisor {
   popupdesc   String     // Description for the popup
   link        String?    // Optional social media or website link
   socialMedia String?    // Optional social media platform name
+  order       Int        @default(0) // Order for sorting advisors
   active      Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -309,6 +310,7 @@ model Fellow {
   popupdesc   String     // Description for the popup
   link        String?    // Optional social media or website link
   socialMedia String?    // Optional social media platform name
+  order       Int        @default(0) // Order for sorting fellows
   active      Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

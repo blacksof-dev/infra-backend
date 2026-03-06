@@ -5,7 +5,9 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
@@ -16,6 +18,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(createAdminDto: CreateAdminDto, currentUser: any) {
@@ -37,12 +40,22 @@ export class AdminService {
       createAdminDto.password,
     );
 
+    // Generate a password reset token so the new admin can set their own password
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    const resetTokenExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     const admin = await this.prisma.admin.create({
       data: {
         name: createAdminDto.name,
         email: createAdminDto.email,
         password: hashedPassword,
         role: UserRole.ADMIN,
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: resetTokenExpires,
       },
       select: {
         id: true,
@@ -53,6 +66,14 @@ export class AdminService {
         updatedAt: true,
       },
     });
+
+    // Send welcome email with the password reset link
+    try {
+      await this.sendWelcomeEmail(admin.email, resetToken, admin.name);
+    } catch (error) {
+      console.error('Failed to send welcome email to new admin:', error);
+      // Do NOT throw – the admin was created successfully; email failure is non-blocking
+    }
 
     return admin;
   }
@@ -111,8 +132,6 @@ export class AdminService {
     return admin;
   }
 
-
-
   async remove(
     id: string,
     deleteConfirmationDto: DeleteConfirmationDto,
@@ -154,7 +173,7 @@ export class AdminService {
     const bcrypt = require('bcryptjs');
     const isPasswordValid = await bcrypt.compare(
       deleteConfirmationDto.superAdminPassword,
-      superAdmin.password
+      superAdmin.password,
     );
 
     if (!isPasswordValid) {
@@ -202,5 +221,101 @@ export class AdminService {
     }
 
     return admin;
+  }
+
+  /**
+   * Send a welcome email to a newly created admin.
+   * The email contains a one-time password-reset link so the admin
+   * can set their own password on first login.
+   */
+  private async sendWelcomeEmail(
+    email: string,
+    resetToken: string,
+    name: string,
+  ) {
+    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    const resendFromEmail = this.configService.get<string>('RESEND_FROM_EMAIL');
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+
+    if (!resendApiKey) {
+      throw new Error('Resend configuration is missing: RESEND_API_KEY');
+    }
+
+    const resetLink = `${frontendUrl}/admin/reset-password?token=${resetToken}`;
+
+    const data = {
+      from: `The Infravision Foundation <${resendFromEmail}>`,
+      to: [email],
+      subject: 'Welcome to The Infravision Foundation – Set Your Password',
+      html: `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+
+    <h2 style="color: #111; margin-bottom: 20px;">
+      Welcome to The Infravision Foundation!
+    </h2>
+
+    <p>Dear ${name},</p>
+
+    <p>
+      You have been successfully registered as an <strong>Admin</strong> on the
+      Infravision Foundation platform. We are excited to have you on board!
+    </p>
+
+    <p>
+      To get started, please set your password by clicking the button below.
+      This link will expire in <strong>10 minutes</strong>.
+    </p>
+
+    <div style="margin: 30px 0; text-align: center;">
+      <a href="${resetLink}"
+         style="background-color: #c82249;
+                color: #ffffff;
+                padding: 12px 26px;
+                text-decoration: none;
+                border-radius: 6px;
+                font-size: 15px;
+                font-weight: 600;
+                display: inline-block;">
+        Set Your Password
+      </a>
+    </div>
+
+    <p>
+      If the button above does not work, copy and paste the following link into your browser:
+    </p>
+    <p style="word-break: break-all; color: #c82249;">${resetLink}</p>
+
+    <p>
+      If you did not expect this email or believe it was sent in error,
+      please contact our support team immediately.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;">
+
+    <p style="font-size: 12px; color: #777;">
+      This is an automated system email. Please do not reply to this message.
+    </p>
+
+    <p style="font-size: 12px; color: #777;">
+      © 2026 theinfravisionfoundation.org. All rights reserved.
+    </p>
+
+  </div>
+`,
+    };
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Resend error: ${response.statusText} - ${errorData}`);
+    }
   }
 }

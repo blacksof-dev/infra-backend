@@ -5,6 +5,8 @@ import {
   IsOptional,
   IsBoolean,
   IsUrl,
+  IsNumber,
+  Min,
 } from 'class-validator';
 
 export class CreateFellowDto {
@@ -45,4 +47,10 @@ export class CreateFellowDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiProperty({ description: 'Order for sorting fellows', default: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  order?: number;
 }
